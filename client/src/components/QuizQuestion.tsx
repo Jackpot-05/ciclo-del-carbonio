@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle } from "lucide-react";
@@ -23,13 +23,17 @@ export default function QuizQuestion({
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
 
+  // Reset state when question changes
+  useEffect(() => {
+    setSelectedAnswer(null);
+    setShowFeedback(false);
+  }, [question]);
+
   const handleAnswerSelect = (answerIndex: number) => {
     setSelectedAnswer(answerIndex);
     setShowFeedback(true);
     const isCorrect = answerIndex === correctAnswer;
-    setTimeout(() => {
-      onAnswer(isCorrect);
-    }, 2000);
+    onAnswer(isCorrect);
   };
 
   return (
