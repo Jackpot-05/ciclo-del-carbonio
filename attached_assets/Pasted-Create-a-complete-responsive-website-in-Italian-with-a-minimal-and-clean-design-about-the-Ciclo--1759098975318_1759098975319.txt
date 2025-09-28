@@ -1,0 +1,59 @@
+Create a complete responsive website in Italian, with a minimal and clean design, about the **Ciclo del Carbonio** (Carbon Cycle).  
+The site must be usable on desktop, clear, and impactful as a school project resource for chemistry and environmental education.
+
+General requirements:
+- Language: Italian only.
+- Technologies: HTML, CSS (Bootstrap allowed), JavaScript (with jQuery if needed).
+- Style: minimal, modern, white background with blue and green accents.
+- Structure: semantic HTML, responsive layout, simple animations/hover effects for clarity.
+- Footer: visible on all pages, with the text "Progetto scolastico sul Ciclo del Carbonio", a link to the "Sitografia e Bibliografia" page, and a note "Realizzato come risorsa didattica per studenti delle scuole superiori."
+
+Navigation menu (all pages must be linked):
+1. **Home**  
+   - Title: "Il Ciclo del Carbonio"  
+   - Short introduction to the project.  
+   - Links to all sections.  
+
+2. **Ciclo del Carbonio**  
+   - Detailed explanation of the carbon cycle as a biogeochemical cycle.  
+   - Highlight interactions between atmosphere, biosphere, hydrosphere, and geosphere.  
+   - Include diagrams or free online images.  
+   - Add interactive panels or animations to visualize the "viaggio dell’atomo di carbonio".
+
+3. **Quiz**  
+   - Multiple choice quiz (5–6 questions minimum).  
+   - Show immediate feedback (correct/incorrect).  
+   - At the end, display total score with a motivational message.  
+
+4. **Infografiche**  
+   - Display infographics about the carbon cycle.  
+   - Allow users to enlarge images with a modal popup.  
+
+5. **Educazione Civica**  
+   - Explain negative anthropic effects related to the carbon cycle (e.g., CO₂ emissions, climate change, deforestation).  
+   - Use short text blocks and at least one image.  
+
+6. **Cittadino Consapevole**  
+   - Suggest sustainable practices for daily life (e.g., recycling, energy saving, sustainable transport).  
+   - Use bullet lists and end with a motivational call-to-action: "Ogni piccolo gesto conta!"  
+
+7. **Lettere e Scienza**  
+   - Page dedicated to Primo Levi’s "Il viaggio del carbonio" from *Il sistema periodico*.  
+   - Structure:  
+     - Introduction about Levi (chemist and writer).  
+     - Narrative summary of the carbon atom journey, connecting science and literature.  
+     - Reflection on how literature makes science more human and accessible.  
+   - Add one symbolic image (e.g., Primo Levi or carbon molecule).  
+   - End with a highlighted reflective box containing a question like: "Qual è il nostro ruolo come atomi nel grande ciclo della vita?".  
+
+8. **Sitografia e Bibliografia**  
+   - Two sections:  
+     - **Bibliografia**: books and articles (e.g., chemistry textbooks, Primo Levi’s *Il sistema periodico*).  
+     - **Sitografia**: online resources used (scientific articles, educational portals, images).  
+   - Present in a clean bullet-point list style.  
+
+Design guidelines:
+- Maintain visual coherence across all pages.  
+- Prioritize readability, clarity, and educational impact.  
+- Use smooth navigation between sections.  
+- Ensure all content is accessible and appropriate for high school students.
