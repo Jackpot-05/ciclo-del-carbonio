@@ -30,6 +30,8 @@ const infographics = [
   }
 ];
 
+// Nessun riferimento diretto all'immagine di Primo Levi in questa pagina, nessuna modifica necessaria.
+
 export default function Infografiche() {
   const [selectedImage, setSelectedImage] = useState<typeof infographics[0] | null>(null);
 
