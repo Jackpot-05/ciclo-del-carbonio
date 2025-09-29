@@ -244,10 +244,12 @@ export default function CittadinoConsapevole() {
           <Button
             size="lg"
             className="mx-auto"
-            onClick={() => console.log('Commitment action triggered')}
+            asChild
             data-testid="button-commitment"
           >
-            Mi Impegno a Fare la Differenza
+            <a href="https://www.mase.gov.it/" target="_blank" rel="noopener noreferrer">
+              Mi Impegno a Fare la Differenza
+            </a>
           </Button>
         </div>
       </Card>

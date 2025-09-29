@@ -34,7 +34,7 @@ export default function Home() {
             />
             
             <SectionCard
-              title="Vote Interattivo"
+              title="Quiz Interattivo"
               description="Metti alla prova le tue conoscenze con domande interattive e ricevi feedback immediato."
               href="/quiz"
               icon={<Vote className="h-6 w-6" />}

@@ -12,7 +12,10 @@ export default function Footer() {
               Progetto scolastico sul Ciclo del Carbonio
             </p>
           </div>
-          
+          <div className="flex flex-col items-center space-y-1 text-sm text-muted-foreground mt-4">
+            <span>Sviluppatori: <strong>Andrea Pittoni, Mattia De Luca, Tancredi Russo</strong></span>
+            <span>Liceo Vittoria Colonna, Roma – Classe 5 R</span>
+          </div>
           <div className="flex items-center justify-center space-x-4 text-sm text-muted-foreground">
             <Link href="/bibliografia" data-testid="link-bibliografia-footer">
               <span className="flex items-center space-x-1 hover:text-primary transition-colors hover-elevate rounded px-2 py-1">
@@ -21,7 +24,7 @@ export default function Footer() {
               </span>
             </Link>
           </div>
-          
+          <p className="text-xs text-muted-foreground mt-4">© 2025 – Tutti i diritti riservati</p>
           <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
             Realizzato come risorsa didattica per studenti delle scuole superiori. 
             Materiale educativo per l'apprendimento del ciclo del carbonio e la consapevolezza ambientale.

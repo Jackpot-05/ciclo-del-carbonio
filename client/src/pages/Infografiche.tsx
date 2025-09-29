@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import ImageModal from "@/components/ImageModal";
-import { ZoomIn } from "lucide-react";
+import { ZoomIn, X } from "lucide-react";
 import carbonCycleImage from "@assets/generated_images/Carbon_cycle_educational_diagram_6e32ec94.png";
 import environmentalImpactImage from "@assets/generated_images/Environmental_impact_infographic_a117eb93.png";
 import sustainablePracticesImage from "@assets/generated_images/Sustainable_practices_illustration_2a1cdb8c.png";
@@ -33,6 +33,8 @@ const infographics = [
 export default function Infografiche() {
   const [selectedImage, setSelectedImage] = useState<typeof infographics[0] | null>(null);
 
+  const closeModal = () => setSelectedImage(null);
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 space-y-8">
       <header className="text-center space-y-4">
@@ -45,38 +47,33 @@ export default function Infografiche() {
         </p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {infographics.map((infographic) => (
-          <Card
+          <div
             key={infographic.id}
-            className="overflow-hidden hover-elevate transition-all duration-300 cursor-pointer group"
+            className="group bg-card rounded-lg shadow-md hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col items-center justify-center p-4 w-full h-full"
             onClick={() => setSelectedImage(infographic)}
             data-testid={`card-infographic-${infographic.id}`}
           >
-            <div className="relative">
+            <div className="relative w-full h-48 sm:h-56 md:h-64 lg:h-72 flex items-center justify-center">
               <img
                 src={infographic.src}
                 alt={infographic.title}
-                className="w-full h-48 object-cover"
+                className="object-contain w-full h-full rounded-lg transition-all duration-300"
               />
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300 flex items-center justify-center">
                 <ZoomIn className="h-8 w-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
             </div>
-            
-            <div className="p-4 space-y-3">
-              <h3 className="font-heading font-semibold text-lg text-foreground">
+            <div className="p-4 space-y-3 w-full">
+              <h3 className="font-heading font-semibold text-lg text-foreground text-center">
                 {infographic.title}
               </h3>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground text-center">
                 {infographic.description}
               </p>
-              <div className="flex items-center text-xs text-primary font-medium">
-                <ZoomIn className="h-3 w-3 mr-1" />
-                Clicca per ingrandire
-              </div>
             </div>
-          </Card>
+          </div>
         ))}
       </div>
 
@@ -97,11 +94,11 @@ export default function Infografiche() {
       {/* Image Modal */}
       {selectedImage && (
         <ImageModal
-          isOpen={!!selectedImage}
-          onClose={() => setSelectedImage(null)}
           imageSrc={selectedImage.src}
           imageTitle={selectedImage.title}
           imageDescription={selectedImage.details}
+          isOpen={true}
+          onClose={closeModal}
         />
       )}
     </div>

@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
-import { Menu, X, BookOpen } from "lucide-react";
+import { Menu, X, BookOpen, Atom } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navigationItems = [
@@ -25,7 +25,7 @@ export default function Navigation() {
           {/* Logo */}
           <Link href="/" data-testid="link-home">
             <div className="flex items-center space-x-2 hover-elevate rounded-md px-3 py-2">
-              <BookOpen className="h-6 w-6 text-primary" />
+              <Atom className="text-primary h-8 w-8 md:h-10 md:w-10 lg:h-12 lg:w-12 transition-all duration-200" />
               <span className="font-heading font-bold text-lg text-foreground">
                 Il Ciclo del Carbonio
               </span>
