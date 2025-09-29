@@ -376,11 +376,11 @@ export default function Bibliografia() {
           <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
             Tutte le fonti elencate sono state consultate per garantire l'accuratezza 
             scientifica dei contenuti presentati. Le informazioni sono aggiornate 
-            al momento della realizzazione del progetto (2024). Per gli studenti è 
+            al momento della realizzazione del progetto (2025). Per gli studenti è 
             consigliabile verificare sempre l'aggiornamento delle fonti online.
           </p>
           <p className="text-xs text-muted-foreground">
-            Ultimo aggiornamento: Settembre 2024
+            Ultimo aggiornamento: Settembre 2025
           </p>
         </div>
       </Card>

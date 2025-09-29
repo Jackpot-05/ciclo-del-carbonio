@@ -24,7 +24,7 @@ export default function Footer() {
               </span>
             </Link>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">© 2025 – Tutti i diritti riservati</p>
+          <p className="text-xs text-muted-foreground mt-4">© 2025 Liceo Vittoria Colonna – Tutti i diritti riservati</p>
           <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
             Realizzato come risorsa didattica per studenti delle scuole superiori. 
             Materiale educativo per l'apprendimento del ciclo del carbonio e la consapevolezza ambientale.
