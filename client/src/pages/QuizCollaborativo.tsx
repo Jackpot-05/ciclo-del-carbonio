@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Users, Clock, HelpCircle } from "lucide-react";
-import { firebaseStorage } from "@/lib/firebaseStorage";
+import { airtableStorage } from "@/lib/airtableStorage";
 import {
   Tooltip,
   TooltipContent,
@@ -141,7 +141,7 @@ export default function QuizCollaborativo() {
 
     try {
       // Controlla se la sessione esiste
-      const sessionExists = await firebaseStorage.sessionExists(sessionCodeInput);
+      const sessionExists = await airtableStorage.sessionExists(sessionCodeInput);
       if (!sessionExists) {
         alert('Codice sessione non valido! Controlla con il professore.');
         setIsSubmitting(false);
@@ -149,7 +149,7 @@ export default function QuizCollaborativo() {
       }
 
       // Unisciti alla sessione
-      const result = await firebaseStorage.joinSession(sessionCodeInput, name.trim(), '');
+      const result = await airtableStorage.joinSession(sessionCodeInput, name.trim(), '');
       if (!result.success) {
         alert('Errore nell\'unirsi alla sessione');
         setIsSubmitting(false);
@@ -171,7 +171,7 @@ export default function QuizCollaborativo() {
       
       // Avvia heartbeat per rimanere online
       const heartbeatInterval = setInterval(() => {
-        firebaseStorage.updateHeartbeat(sessionCodeInput, result.studentId);
+        airtableStorage.updateHeartbeat(sessionCodeInput, result.studentId);
       }, 10000); // Ogni 10 secondi
       
       // Pulisci heartbeat quando il componente si smonta
@@ -181,11 +181,19 @@ export default function QuizCollaborativo() {
       console.error('❌ Errore registrazione:', error);
       
       // Fallback: solo localStorage
-      setStudent(newStudent);
+      const fallbackStudent: Student = {
+        id: Date.now().toString(),
+        name: name.trim(),
+        answers: [],
+        score: 0,
+        isOnline: true
+      };
+      
+      setStudent(fallbackStudent);
       const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
-      allStudents.push(newStudent);
+      allStudents.push(fallbackStudent);
       localStorage.setItem('quiz_students', JSON.stringify(allStudents));
-      localStorage.setItem('current_student', JSON.stringify(newStudent));
+      localStorage.setItem('current_student', JSON.stringify(fallbackStudent));
       console.log('📱 Studente salvato solo in localStorage');
     }
     
@@ -219,9 +227,9 @@ export default function QuizCollaborativo() {
     setStudent(updatedStudent);
     
     try {
-      // Salva risposta con Firebase
+      // Salva risposta con Airtable
       if (selectedAnswer !== null) {
-        await firebaseStorage.saveAnswer(
+        await airtableStorage.saveAnswer(
           classCode, 
           student.id, 
           collaborativeQuestions.indexOf(currentQuestion), 

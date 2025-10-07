@@ -1,326 +1,459 @@
-<!DOCTYPE html><!DOCTYPE html>
-
-<html lang="it"><html lang="it">
-
-<head><head>
-
-    <meta charset="UTF-8">    <meta charset="UTF-8">
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>🌍 Quiz Collaborativo - Ciclo del Carbonio - v2.0</title>
-    <!-- Cache Buster: 2025-10-07-20:59 -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Quiz Collaborativo - Ciclo del Carbonio | GitHub Pages</title>
+    
+    <!-- Cache Buster & SEO -->
+    <meta name="description" content="Sistema di quiz collaborativo in tempo reale sul ciclo del carbonio. Dashboard per professori e quiz per studenti con Airtable backend.">
+    <meta name="keywords" content="quiz, carbonio, collaborativo, airtable, educazione, chimica">
     <meta name="cache-control" content="no-cache, no-store, must-revalidate">
     <meta name="pragma" content="no-cache">
-    <meta name="expires" content="0">    <title>Quiz Collaborativo - Ciclo del Carbonio</title>
-
-    <style>    <style>
-
-        * {         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-            margin: 0;         body { 
-
-            padding: 0;             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-
-            box-sizing: border-box;             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-
-        }            min-height: 100vh;
-
-                    display: flex;
-
-        body {             align-items: center;
-
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;            justify-content: center;
-
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);            color: white;
-
-            min-height: 100vh;        }
-
-            display: flex;        .container {
-
-            align-items: center;            text-align: center;
-
-            justify-content: center;            max-width: 800px;
-
-            color: white;            padding: 40px 20px;
-
-            line-height: 1.6;            background: rgba(255,255,255,0.1);
-
-        }            border-radius: 20px;
-
-                    backdrop-filter: blur(10px);
-
-        .container {            border: 1px solid rgba(255,255,255,0.2);
-
-            text-align: center;        }
-
-            max-width: 900px;        h1 { font-size: 3em; margin-bottom: 20px; }
-
-            padding: 50px 30px;        p { font-size: 1.2em; margin-bottom: 30px; opacity: 0.9; }
-
-            background: rgba(255, 255, 255, 0.1);        .buttons { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
-
-            border-radius: 25px;        .btn {
-
-            backdrop-filter: blur(15px);            padding: 15px 30px;
-
-            border: 1px solid rgba(255, 255, 255, 0.2);            background: rgba(255,255,255,0.2);
-
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);            border: 2px solid rgba(255,255,255,0.3);
-
-        }            border-radius: 50px;
-
-                    color: white;
-
-        h1 {             text-decoration: none;
-
-            font-size: 3.5em;             font-weight: 600;
-
-            margin-bottom: 15px;            transition: all 0.3s ease;
-
-            font-weight: 700;            backdrop-filter: blur(5px);
-
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);        }
-
-        }        .btn:hover {
-
-                    background: rgba(255,255,255,0.3);
-
-        h2 {            transform: translateY(-2px);
-
-            font-size: 1.8em;            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-
-            margin-bottom: 25px;        }
-
-            opacity: 0.9;        .btn.primary { background: #4CAF50; border-color: #4CAF50; }
-
-            font-weight: 400;        .btn.secondary { background: #FF9800; border-color: #FF9800; }
-
-        }        .status {
-
-                    margin-top: 30px;
-
-        p {             padding: 15px;
-
-            font-size: 1.3em;             background: rgba(76, 175, 80, 0.2);
-
-            margin-bottom: 35px;             border-radius: 10px;
-
-            opacity: 0.9;            border-left: 4px solid #4CAF50;
-
-            max-width: 600px;        }
-
-            margin-left: auto;        @media (max-width: 600px) {
-
-            margin-right: auto;            h1 { font-size: 2em; }
-
-        }            .buttons { flex-direction: column; align-items: center; }
-
-                    .btn { width: 250px; }
-
-        .buttons {         }
-
-            display: flex;     </style>
-
-            gap: 25px; </head>
-
-            justify-content: center; <body>
-
-            flex-wrap: wrap;    <div class="container">
-
-            margin-bottom: 40px;        <h1>🌍 Quiz Collaborativo</h1>
-
-        }        <h2>Ciclo del Carbonio</h2>
-
-                <p>Sistema di quiz in tempo reale per studenti e professori</p>
-
-        .btn {        
-
-            padding: 18px 35px;        <div class="buttons">
-
-            background: rgba(255, 255, 255, 0.2);            <a href="#" class="btn primary" onclick="goToAdmin()">👨‍🏫 Dashboard Professore</a>
-
-            border: 2px solid rgba(255, 255, 255, 0.3);            <a href="#" class="btn secondary" onclick="goToQuiz()">👩‍🎓 Quiz Studenti</a>
-
-            border-radius: 50px;        </div>
-
-            color: white;        
-
-            text-decoration: none;        <div class="status">
-
-            font-weight: 600;            <strong>✅ Sistema Operativo</strong><br>
-
-            font-size: 1.1em;            Firebase sync attivo • Cross-device ready • Mobile optimized
-
-            transition: all 0.3s ease;        </div>
-
-            backdrop-filter: blur(10px);        
-
-            min-width: 200px;        <p style="margin-top: 30px; font-size: 0.9em; opacity: 0.7;">
-
-            display: inline-block;            <strong>Come funziona:</strong><br>
-
-        }            Il professore genera un codice → Gli studenti inseriscono il codice → Sync automatico in tempo reale
-
-                </p>
-
-        .btn:hover {    </div>
-
-            background: rgba(255, 255, 255, 0.3);
-
-            transform: translateY(-3px);    <script>
-
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);        function goToAdmin() {
-
-            border-color: rgba(255, 255, 255, 0.5);            window.location.href = './quiz-admin.html';
-
-        }        }
-
-                
-
-        .btn.primary {         function goToQuiz() {
-
-            background: linear-gradient(45deg, #4CAF50, #45a049);            window.location.href = './quiz-collaborativo.html';
-
-            border-color: #4CAF50;        }
-
-        }        
-
-                // Fallback se i file non esistono
-
-        .btn.secondary {         setTimeout(() => {
-
-            background: linear-gradient(45deg, #FF9800, #f57c00);            if (document.querySelector('.status')) {
-
-            border-color: #FF9800;                document.querySelector('.status').innerHTML = `
-
-        }                    <strong>⚠️ Sistema in Configurazione</strong><br>
-
-                            Utilizza il <a href="http://localhost:8080" style="color: #4CAF50;">server locale</a> per il pieno funzionamento
-
-        .status {                `;
-
-            margin-top: 35px;            }
-
-            padding: 20px;        }, 3000);
-
-            background: rgba(76, 175, 80, 0.2);    </script>
-
-            border-radius: 15px;</body>
-
-            border-left: 5px solid #4CAF50;</html>
-            backdrop-filter: blur(5px);
+    <meta name="expires" content="0">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --border: rgba(255,255,255,0.2);
         }
-        
-        .status strong {
-            font-size: 1.2em;
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
-        
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 1000px;
+            padding: 60px 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 30px;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+            margin: 20px;
+            animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 2px 4px 8px rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .subtitle {
+            font-size: 1.5rem;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            max-width: 700px;
+            margin: 0 auto 40px;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .btn {
+            padding: 25px 35px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.2rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            border-color: rgba(255,255,255,0.4);
+        }
+
+        .btn:hover::before {
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, var(--success), #059669);
+            border-color: var(--success);
+        }
+
+        .btn.secondary {
+            background: linear-gradient(135deg, var(--warning), #d97706);
+            border-color: var(--warning);
+        }
+
+        .emoji {
+            font-size: 1.8rem;
+        }
+
+        .status-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+        }
+
+        .status-card.success {
+            border-left: 5px solid var(--success);
+        }
+
         .instructions {
-            margin-top: 35px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(5px);
+            border: 1px solid var(--border);
+        }
+
+        .instructions h3 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            color: #fbbf24;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .step {
+            background: rgba(255,255,255,0.1);
             padding: 20px;
-            background: rgba(255, 255, 255, 0.1);
             border-radius: 15px;
             backdrop-filter: blur(5px);
         }
-        
-        .emoji {
-            font-size: 1.5em;
-            margin-right: 10px;
+
+        .step-number {
+            background: var(--success);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
-        
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            opacity: 0.7;
+            font-size: 0.95rem;
+        }
+
+        .tech-stack {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .tech-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            backdrop-filter: blur(5px);
+        }
+
         @media (max-width: 768px) {
             .container {
-                margin: 20px;
-                padding: 30px 20px;
+                padding: 40px 25px;
+                margin: 10px;
             }
-            
-            h1 { 
-                font-size: 2.5em; 
+
+            h1 {
+                font-size: 2.5rem;
             }
-            
-            h2 {
-                font-size: 1.4em;
+
+            .subtitle {
+                font-size: 1.2rem;
             }
-            
-            p {
-                font-size: 1.1em;
+
+            .description {
+                font-size: 1rem;
             }
-            
-            .buttons { 
-                flex-direction: column; 
-                align-items: center; 
+
+            .buttons {
+                grid-template-columns: 1fr;
             }
-            
-            .btn { 
-                width: 280px; 
-                margin-bottom: 10px;
+
+            .btn {
+                padding: 20px 25px;
+                font-size: 1.1rem;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
             }
         }
-        
-        .pulse {
-            animation: pulse 2s infinite;
+
+        .loading {
+            display: none;
+            margin-top: 20px;
         }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="pulse">🌍 Quiz Collaborativo</h1>
-        <h2>Ciclo del Carbonio</h2>
-        <p>Sistema avanzato di quiz in tempo reale per studenti e professori con sincronizzazione cross-device</p>
-        
+        <div class="header">
+            <h1>🌍 Quiz Collaborativo</h1>
+            <div class="subtitle">Ciclo del Carbonio</div>
+            <p class="description">
+                Sistema avanzato di quiz in tempo reale per studenti e professori con 
+                sincronizzazione Airtable e supporto cross-device
+            </p>
+        </div>
+
         <div class="buttons">
-            <a href="./quiz-admin.html" class="btn primary">
-                <span class="emoji">👨‍🏫</span>Dashboard Professore
+            <a href="#" class="btn primary" onclick="loadDashboard()">
+                <span class="emoji">👨‍🏫</span>
+                <div>
+                    <div>Dashboard Professore</div>
+                    <small style="opacity: 0.8;">Genera sessioni e monitora studenti</small>
+                </div>
             </a>
-            <a href="./quiz-collaborativo.html" class="btn secondary">
-                <span class="emoji">👩‍🎓</span>Quiz Studenti
+            <a href="#" class="btn secondary" onclick="loadQuiz()">
+                <span class="emoji">👩‍🎓</span>
+                <div>
+                    <div>Quiz Studenti</div>
+                    <small style="opacity: 0.8;">Inserisci codice e partecipa</small>
+                </div>
             </a>
         </div>
-        
-        <div class="status">
+
+        <div class="status-card success">
             <strong>✅ Sistema Completamente Operativo</strong><br>
-            Firebase realtime sync • Cross-device ready • Mobile optimized • Zero lag
+            Airtable backend • Cross-device sync • Mobile optimized • Zero latency
         </div>
-        
+
         <div class="instructions">
-            <strong>🚀 Come Funziona:</strong><br>
-            1. Il professore genera un <strong>codice sessione</strong> di 6 cifre<br>
-            2. Gli studenti inseriscono <strong>nome + codice</strong> per unirsi<br>
-            3. Quiz sincronizzato <strong>automaticamente in tempo reale</strong> su tutti i dispositivi
+            <h3>🚀 Come Funziona</h3>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <strong>Professore</strong><br>
+                    Genera un codice sessione di 6 cifre
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <strong>Studenti</strong><br>
+                    Inseriscono nome + codice per unirsi
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <strong>Real-Time</strong><br>
+                    Quiz sincronizzato automaticamente
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px;">Caricamento app React...</p>
+        </div>
+
+        <div class="footer">
+            <div>🔧 Powered by React + TypeScript + Airtable + GitHub Pages</div>
+            <div class="tech-stack">
+                <span class="tech-badge">React 18</span>
+                <span class="tech-badge">TypeScript</span>
+                <span class="tech-badge">Airtable API</span>
+                <span class="tech-badge">Tailwind CSS</span>
+                <span class="tech-badge">Vite</span>
+            </div>
         </div>
     </div>
 
+    <!-- React App Mount Point -->
+    <div id="root"></div>
+
     <script>
-        // Smooth animations
+        // Funzioni di navigazione
+        function loadDashboard() {
+            showLoading();
+            // Prova a caricare l'app React, altrimenti fallback
+            setTimeout(() => {
+                if (!document.querySelector('#root').innerHTML.trim()) {
+                    window.location.href = './quiz-admin.html';
+                } else {
+                    // Navigate tramite React Router se caricato
+                    window.history.pushState({}, '', '/quiz-admin');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                }
+            }, 100);
+        }
+
+        function loadQuiz() {
+            showLoading();
+            setTimeout(() => {
+                if (!document.querySelector('#root').innerHTML.trim()) {
+                    window.location.href = './quiz-collaborativo.html';
+                } else {
+                    window.history.pushState({}, '', '/quiz-collaborativo');
+                    window.dispatchEvent(new PopStateEvent('popstate'));
+                }
+            }, 100);
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        // Controlla se l'app React si carica
+        function checkReactApp() {
+            const root = document.querySelector('#root');
+            if (root && root.innerHTML.trim()) {
+                // App React caricata, nascondi landing page
+                document.querySelector('.container').style.display = 'none';
+                console.log('✅ App React caricata con successo');
+            } else {
+                // App React non caricata, mostra landing page
+                console.log('ℹ️ Landing page statica attiva');
+                setTimeout(checkReactApp, 1000);
+            }
+        }
+
+        // Avvia controllo React app
+        setTimeout(checkReactApp, 500);
+
+        // Animazioni di caricamento
         document.addEventListener('DOMContentLoaded', function() {
+            // Fade in della landing page
             const container = document.querySelector('.container');
             container.style.opacity = '0';
-            container.style.transform = 'translateY(30px)';
-            
             setTimeout(() => {
-                container.style.transition = 'all 0.8s ease';
+                container.style.transition = 'opacity 0.8s ease';
                 container.style.opacity = '1';
-                container.style.transform = 'translateY(0)';
             }, 100);
+
+            // Messaggio se la React app non si carica
+            setTimeout(() => {
+                const root = document.querySelector('#root');
+                if (!root.innerHTML.trim()) {
+                    console.log('⚠️ React app non caricata, usando landing page statica');
+                }
+            }, 3000);
         });
-        
-        // Fallback message after 5 seconds if React app not loading
-        setTimeout(() => {
-            const statusDiv = document.querySelector('.status');
-            if (statusDiv && !document.querySelector('#root')) {
-                statusDiv.innerHTML = `
-                    <strong>⚠️ Caricamento App React...</strong><br>
-                    Se non si carica, prova il <a href="http://localhost:8080" style="color: #4CAF50; text-decoration: underline;">server locale</a>
-                `;
-            }
-        }, 5000);
+
+        // Test connessione Airtable (solo per demo)
+        function testAirtableConnection() {
+            console.log('🔧 Testing Airtable connection...');
+            // Questa funzione sarà espansa quando l'app React si carica
+        }
+
+        // Carica script React se disponibile
+        const reactScript = document.createElement('script');
+        reactScript.src = './assets/index.js';
+        reactScript.type = 'module';
+        reactScript.onerror = () => {
+            console.log('ℹ️ Script React non trovato, usando landing page statica');
+        };
+        document.head.appendChild(reactScript);
+
+        const reactCss = document.createElement('link');
+        reactCss.rel = 'stylesheet';
+        reactCss.href = './assets/index.css';
+        reactCss.onerror = () => {
+            console.log('ℹ️ CSS React non trovato, usando stili inline');
+        };
+        document.head.appendChild(reactCss);
     </script>
 </body>
 </html>

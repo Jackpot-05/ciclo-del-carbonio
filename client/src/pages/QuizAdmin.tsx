@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { firebaseStorage } from "@/lib/firebaseStorage";
+import { airtableStorage } from "@/lib/airtableStorage";
 import { 
   Users, 
   CheckCircle, 
@@ -51,8 +51,8 @@ export default function QuizAdmin() {
 
   // Genera nuovo codice sessione
   const generateNewSession = async () => {
-    const newCode = firebaseStorage.generateSessionCode();
-    const success = await firebaseStorage.createSession(newCode);
+    const newCode = airtableStorage.generateSessionCode();
+    const success = await airtableStorage.createSession(newCode);
     if (success) {
       setSessionCode(newCode);
       setStudents([]); // Reset studenti per nuova sessione
@@ -67,7 +67,7 @@ export default function QuizAdmin() {
     if (!sessionCode) return;
     
     try {
-      const sessionData = await firebaseStorage.getSessionData(sessionCode);
+      const sessionData = await airtableStorage.getSessionData(sessionCode);
       if (sessionData && sessionData.students) {
         const studentsArray = Object.entries(sessionData.students).map(([id, data]: [string, any]) => ({
           id,
