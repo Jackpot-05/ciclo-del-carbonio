@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Users, Clock, HelpCircle } from "lucide-react";
+import { cloudStorage } from "@/lib/cloudStorage";
 import {
   Tooltip,
   TooltipContent,
@@ -142,43 +143,56 @@ export default function QuizCollaborativo() {
     };
     
     try {
-      // Prova chiamata API (potrebbe fallire su Vercel)
-      const response = await fetch('/api/quiz/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          isOnline: true
-        }),
+      // Salva nel cloud storage per sincronizzazione cross-device
+      const cloudSuccess = await cloudStorage.saveStudent({
+        ...newStudent,
+        lastActivity: Date.now(),
+        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
+        createdAt: Date.now()
       });
       
-      if (response.ok) {
-        const apiStudent = await response.json();
-        setStudent(apiStudent);
-        console.log('✅ Studente registrato via API:', apiStudent);
-        
-        // Salva anche in localStorage per persistenza
-        const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
-        allStudents.push(apiStudent);
-        localStorage.setItem('quiz_students', JSON.stringify(allStudents));
-      } else {
-        throw new Error('API non disponibile');
+      if (cloudSuccess) {
+        console.log('☁️ Studente registrato nel cloud:', newStudent.name);
       }
-    } catch (error) {
-      console.warn('⚠️ API non disponibile, uso localStorage:', error);
       
-      // Fallback: uso localStorage come storage principale
+      // Prova anche chiamata API backend (se disponibile)
+      try {
+        const response = await fetch('/api/quiz/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            isOnline: true
+          }),
+        });
+        
+        if (response.ok) {
+          console.log('✅ Studente registrato anche via API backend');
+        }
+      } catch (apiError) {
+        console.log('ℹ️ API backend non disponibile (normale su Vercel)');
+      }
+      
       setStudent(newStudent);
       
-      // Salva in localStorage
+      // Salva anche in localStorage come backup locale
       const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
       allStudents.push(newStudent);
       localStorage.setItem('quiz_students', JSON.stringify(allStudents));
       localStorage.setItem('current_student', JSON.stringify(newStudent));
       
-      console.log('📱 Studente salvato in localStorage:', newStudent);
+    } catch (error) {
+      console.error('❌ Errore registrazione:', error);
+      
+      // Fallback completo: solo localStorage
+      setStudent(newStudent);
+      const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
+      allStudents.push(newStudent);
+      localStorage.setItem('quiz_students', JSON.stringify(allStudents));
+      localStorage.setItem('current_student', JSON.stringify(newStudent));
+      console.log('📱 Studente salvato solo in localStorage');
     }
     
     setIsRegistered(true);
@@ -211,28 +225,42 @@ export default function QuizCollaborativo() {
     setStudent(updatedStudent);
     
     try {
-      // Prova a inviare al backend
-      const response = await fetch('/api/quiz/answer', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          studentId: student.id,
-          answer: answer
-        }),
+      // Salva aggiornamento nel cloud storage
+      const cloudSuccess = await cloudStorage.saveStudent({
+        ...updatedStudent,
+        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
+        createdAt: Date.now()
       });
       
-      if (response.ok) {
-        console.log('✅ Risposta inviata via API:', answer);
-      } else {
-        throw new Error('API non disponibile');
+      if (cloudSuccess) {
+        console.log('☁️ Risposta salvata nel cloud:', answer.questionId);
       }
+      
+      // Prova a inviare al backend (se disponibile)
+      try {
+        const response = await fetch('/api/quiz/answer', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            studentId: student.id,
+            answer: answer
+          }),
+        });
+        
+        if (response.ok) {
+          console.log('✅ Risposta inviata anche via API backend');
+        }
+      } catch (apiError) {
+        console.log('ℹ️ API backend non disponibile per risposta');
+      }
+      
     } catch (error) {
-      console.warn('⚠️ API non disponibile per risposta, salvo in localStorage');
+      console.warn('⚠️ Errore salvataggio cloud per risposta');
     }
     
-    // Salva sempre in localStorage per persistenza
+    // Salva sempre in localStorage come backup
     const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
     const studentIndex = allStudents.findIndex((s: Student) => s.id === student.id);
     if (studentIndex >= 0) {

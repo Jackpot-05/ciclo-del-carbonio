@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cloudStorage } from "@/lib/cloudStorage";
 import { 
   Users, 
   CheckCircle, 
@@ -12,7 +13,10 @@ import {
   Download,
   RefreshCw,
   Eye,
-  TrendingUp
+  TrendingUp,
+  Cloud,
+  Wifi,
+  WifiOff
 } from "lucide-react";
 import {
   Table,
@@ -121,6 +125,22 @@ export default function QuizAdmin() {
   const [stats, setStats] = useState<QuizStats | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
+  const [dataSource, setDataSource] = useState<'cloud' | 'api' | 'local' | 'mock'>('cloud');
+
+  // Funzione per caricare dati dal cloud
+  const loadFromCloud = async (): Promise<Student[] | null> => {
+    try {
+      const cloudStudents = await cloudStorage.loadAllStudents();
+      if (cloudStudents.length > 0) {
+        console.log('☁️ Caricati studenti dal cloud:', cloudStudents.length);
+        return cloudStudents;
+      }
+      return null;
+    } catch (error) {
+      console.warn('⚠️ Errore caricamento cloud:', error);
+      return null;
+    }
+  };
 
   // Funzione per caricare dati da localStorage
   const loadFromLocalStorage = (): Student[] => {
@@ -152,27 +172,37 @@ export default function QuizAdmin() {
     }
   };
 
-  // Caricamento iniziale dati
+  // Caricamento iniziale dati con priorità cloud
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoading(true);
       
-      // Prova prima con API
-      const apiStudents = await fetchStudentsData();
-      
-      if (apiStudents !== null && apiStudents.length > 0) {
-        setStudents(apiStudents);
-        console.log('🚀 Usando dati da API');
+      // 1. Prova prima con Cloud Storage
+      const cloudStudents = await loadFromCloud();
+      if (cloudStudents && cloudStudents.length > 0) {
+        setStudents(cloudStudents);
+        setDataSource('cloud');
+        console.log('☁️ Usando dati dal cloud storage');
       } else {
-        // Fallback: localStorage
-        const localStudents = loadFromLocalStorage();
-        if (localStudents.length > 0) {
-          setStudents(localStudents);
-          console.log('📱 Usando dati da localStorage');
+        // 2. Fallback: API backend
+        const apiStudents = await fetchStudentsData();
+        if (apiStudents !== null && apiStudents.length > 0) {
+          setStudents(apiStudents);
+          setDataSource('api');
+          console.log('🚀 Usando dati da API backend');
         } else {
-          // Ultimo fallback: mock data
-          setStudents(mockStudents);
-          console.log('📋 Usando mock data come demo');
+          // 3. Fallback: localStorage
+          const localStudents = loadFromLocalStorage();
+          if (localStudents.length > 0) {
+            setStudents(localStudents);
+            setDataSource('local');
+            console.log('📱 Usando dati da localStorage');
+          } else {
+            // 4. Ultimo fallback: mock data
+            setStudents(mockStudents);
+            setDataSource('mock');
+            console.log('📋 Usando mock data come demo');
+          }
         }
       }
       
