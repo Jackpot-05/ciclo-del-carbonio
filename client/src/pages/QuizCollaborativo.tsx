@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Users, Clock, HelpCircle } from "lucide-react";
-import { realTimeStorage } from "@/lib/realTimeStorage";
+import { firebaseStorage } from "@/lib/firebaseStorage";
 import {
   Tooltip,
   TooltipContent,
@@ -139,42 +139,43 @@ export default function QuizCollaborativo() {
     
     setIsSubmitting(true);
 
-    // Controlla se il codice sessione esiste o unisciti alla sessione
-    const success = realTimeStorage.joinSession(sessionCodeInput);
-    if (!success) {
-      alert('Errore nell\'unirsi alla sessione');
-      setIsSubmitting(false);
-      return;
-    }
-    
-    const newStudent: Student = {
-      id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      name: name.trim(),
-      answers: [],
-      score: 0,
-      isOnline: true
-    };
-    
     try {
-      // Usa sistema real-time per sincronizzazione immediata
-      const saveSuccess = realTimeStorage.saveStudent({
-        ...newStudent,
-        lastActivity: Date.now(),
-        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
-      });
-      
-      if (saveSuccess) {
-        console.log('🔥 Studente salvato automaticamente - visibile al prof!');
-        setClassCode(realTimeStorage.getSessionCode());
+      // Controlla se la sessione esiste
+      const sessionExists = await firebaseStorage.sessionExists(sessionCodeInput);
+      if (!sessionExists) {
+        alert('Codice sessione non valido! Controlla con il professore.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Unisciti alla sessione
+      const result = await firebaseStorage.joinSession(sessionCodeInput, name.trim(), '');
+      if (!result.success) {
+        alert('Errore nell\'unirsi alla sessione');
+        setIsSubmitting(false);
+        return;
       }
       
-      setStudent(newStudent);
+      const newStudent: Student = {
+        id: result.studentId,
+        name: name.trim(),
+        answers: [],
+        score: 0,
+        isOnline: true
+      };
       
-      // Salva anche in localStorage per backup
-      const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
-      allStudents.push(newStudent);
-      localStorage.setItem('quiz_students', JSON.stringify(allStudents));
-      localStorage.setItem('current_student', JSON.stringify(newStudent));
+      setStudent(newStudent);
+      setClassCode(sessionCodeInput);
+      
+      console.log('🔥 Studente registrato! Visibile al professore in tempo reale');
+      
+      // Avvia heartbeat per rimanere online
+      const heartbeatInterval = setInterval(() => {
+        firebaseStorage.updateHeartbeat(sessionCodeInput, result.studentId);
+      }, 10000); // Ogni 10 secondi
+      
+      // Pulisci heartbeat quando il componente si smonta
+      return () => clearInterval(heartbeatInterval);
       
     } catch (error) {
       console.error('❌ Errore registrazione:', error);
@@ -218,16 +219,21 @@ export default function QuizCollaborativo() {
     setStudent(updatedStudent);
     
     try {
-      // Salva aggiornamento con real-time storage
-      realTimeStorage.saveStudent({
-        ...updatedStudent,
-        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
-      });
+      // Salva risposta con Firebase
+      if (selectedAnswer !== null) {
+        await firebaseStorage.saveAnswer(
+          classCode, 
+          student.id, 
+          collaborativeQuestions.indexOf(currentQuestion), 
+          selectedAnswer, 
+          isCorrect
+        );
+      }
       
-      console.log('🔥 Risposta salvata automaticamente');
+      console.log('🔥 Risposta salvata automaticamente - visibile al prof!');
       
     } catch (error) {
-      console.warn('⚠️ Errore salvataggio risposta');
+      console.warn('⚠️ Errore salvataggio risposta:', error);
     }
     
     // Salva sempre in localStorage come backup

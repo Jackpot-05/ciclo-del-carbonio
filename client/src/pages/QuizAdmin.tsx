@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { realTimeStorage } from "@/lib/realTimeStorage";
+import { firebaseStorage } from "@/lib/firebaseStorage";
 import { 
   Users, 
   CheckCircle, 
@@ -50,40 +50,71 @@ export default function QuizAdmin() {
   const [sessionCode, setSessionCode] = useState<string>('');
 
   // Genera nuovo codice sessione
-  const generateNewSession = () => {
-    const newCode = realTimeStorage.generateSessionCode();
-    realTimeStorage.setSessionCode(newCode);
-    setSessionCode(newCode);
-    setStudents([]); // Reset studenti per nuova sessione
-    console.log('🔄 Nuova sessione generata:', newCode);
+  const generateNewSession = async () => {
+    const newCode = firebaseStorage.generateSessionCode();
+    const success = await firebaseStorage.createSession(newCode);
+    if (success) {
+      setSessionCode(newCode);
+      setStudents([]); // Reset studenti per nuova sessione
+      console.log('🔄 Nuova sessione generata:', newCode);
+    } else {
+      alert('Errore nella creazione della sessione');
+    }
   };
 
-  // Carica dati e avvia listening
+  // Carica dati sessione
+  const loadSessionData = async () => {
+    if (!sessionCode) return;
+    
+    try {
+      const sessionData = await firebaseStorage.getSessionData(sessionCode);
+      if (sessionData && sessionData.students) {
+        const studentsArray = Object.entries(sessionData.students).map(([id, data]: [string, any]) => ({
+          id,
+          name: data.name + (data.surname ? ` ${data.surname}` : ''),
+          answers: Object.entries(data.answers || {}).map(([qIndex, answer]: [string, any]) => ({
+            questionId: `q${parseInt(qIndex) + 1}`,
+            selectedAnswer: answer.answer,
+            isCorrect: answer.isCorrect,
+            timestamp: answer.timestamp
+          })),
+          score: data.score || 0,
+          isOnline: Date.now() - (data.lastActive || 0) < 30000, // Online se attivo negli ultimi 30 sec
+          lastActivity: data.lastActive || 0,
+          device: 'Web',
+          sessionCode: sessionCode
+        }));
+        setStudents(studentsArray);
+        setLastUpdate(new Date().toLocaleTimeString());
+        console.log('� Dati caricati:', studentsArray.length, 'studenti');
+      }
+    } catch (error) {
+      console.error('Errore caricamento dati:', error);
+    }
+  };
+
+  // Carica dati iniziali e imposta refresh automatico
   useEffect(() => {
     setIsLoading(true);
     
-    // Ottieni codice sessione
-    setSessionCode(realTimeStorage.getSessionCode());
-    
-    // Carica dati iniziali
-    const initialStudents = realTimeStorage.loadAllStudents();
-    setStudents(initialStudents);
-    console.log('📊 Dashboard avviata con', initialStudents.length, 'studenti');
-    
-    // Configura listening real-time
-    const stopListening = realTimeStorage.listenToUpdates((updatedStudents) => {
-      console.log('🔄 Aggiornamento real-time:', updatedStudents.length, 'studenti');
-      setStudents(updatedStudents);
-      setLastUpdate(new Date().toLocaleTimeString());
-    });
+    // Genera codice iniziale se non presente
+    if (!sessionCode) {
+      generateNewSession();
+    } else {
+      loadSessionData();
+    }
     
     setIsLoading(false);
     
-    // Cleanup
-    return () => {
-      stopListening();
-    };
-  }, []);
+    // Refresh automatico ogni 5 secondi
+    const interval = setInterval(() => {
+      if (sessionCode) {
+        loadSessionData();
+      }
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [sessionCode]);
 
   // Calcola statistiche
   const stats = {
