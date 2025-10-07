@@ -397,16 +397,23 @@
         }
 
         // Controlla se l'app React si carica
+        let checkReactAppRetries = 0;
+        const MAX_RETRIES = 10; // Massimo 10 secondi di tentativi
+        
         function checkReactApp() {
             const root = document.querySelector('#root');
             if (root && root.innerHTML.trim()) {
                 // App React caricata, nascondi landing page
                 document.querySelector('.container').style.display = 'none';
                 console.log('✅ App React caricata con successo');
-            } else {
-                // App React non caricata, mostra landing page
-                console.log('ℹ️ Landing page statica attiva');
+            } else if (checkReactAppRetries < MAX_RETRIES) {
+                // App React non caricata, riprova
+                checkReactAppRetries++;
+                console.log(`ℹ️ Landing page statica attiva (tentativo ${checkReactAppRetries}/${MAX_RETRIES})`);
                 setTimeout(checkReactApp, 1000);
+            } else {
+                // Raggiunto il massimo dei tentativi, usa la landing page statica
+                console.log('ℹ️ React app non disponibile, usando landing page statica');
             }
         }
 
