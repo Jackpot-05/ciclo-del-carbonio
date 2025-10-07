@@ -3,19 +3,43 @@ export class AirtableQuizStorage {
   private baseId = 'your_base_id'; // Da configurare
   private apiKey = 'your_api_key'; // Da configurare  
   private baseUrl = `https://api.airtable.com/v0/${this.baseId}`;
+  private enabled = false;
+  private tableSessions = 'Sessions';
+  private tableStudents = 'Students';
+  private tableAnswers = 'Answers';
 
   constructor() {
-    // Leggi da variabili d'ambiente se disponibili
-    if (typeof process !== 'undefined' && process.env) {
-      this.baseId = process.env.AIRTABLE_BASE_ID || this.baseId;
-      this.apiKey = process.env.AIRTABLE_API_KEY || this.apiKey;
+    // Leggi env Vite lato client
+    const viteEnv = (typeof import.meta !== 'undefined' && (import.meta as any).env) ? (import.meta as any).env : undefined;
+    if (viteEnv) {
+      this.baseId = viteEnv.VITE_AIRTABLE_BASE_ID || this.baseId;
+      this.apiKey = viteEnv.VITE_AIRTABLE_API_KEY || this.apiKey;
+      this.tableSessions = viteEnv.VITE_AIRTABLE_SESSIONS_TABLE || this.tableSessions;
+      this.tableStudents = viteEnv.VITE_AIRTABLE_STUDENTS_TABLE || this.tableStudents;
+      this.tableAnswers = viteEnv.VITE_AIRTABLE_ANSWERS_TABLE || this.tableAnswers;
     }
-    
-    // Fallback: leggi da localStorage per demo (SOLO per sviluppo)
-    if (typeof localStorage !== 'undefined') {
-      this.baseId = localStorage.getItem('airtable_base_id') || this.baseId;
-      this.apiKey = localStorage.getItem('airtable_api_key') || this.apiKey;
-    }
+
+    // Fallback: leggi da localStorage (SOLO sviluppo/override manuale)
+    try {
+      if (typeof localStorage !== 'undefined') {
+        this.baseId = localStorage.getItem('airtable_base_id') || this.baseId;
+        this.apiKey = localStorage.getItem('airtable_api_key') || this.apiKey;
+      }
+    } catch (_) {}
+
+    // Abilita Airtable solo se configurazione valida
+    const looksLikeBase = /^app[\w]+$/.test(this.baseId);
+    const looksLikePat = !/^VITE_/i.test(this.apiKey) && !/^your_/i.test(this.apiKey) && this.apiKey.length > 8;
+    this.enabled = looksLikeBase && looksLikePat;
+    this.baseUrl = `https://api.airtable.com/v0/${this.baseId}`;
+
+    // Log diagnostico leggero (non stampa la chiave)
+    try {
+      console.info(`Airtable enabled: ${this.enabled} (baseId: ${this.enabled ? this.baseId : 'not-set'})`);
+      if (this.enabled) {
+        console.info(`Airtable tables → Sessions: ${this.tableSessions}, Students: ${this.tableStudents}, Answers: ${this.tableAnswers}`);
+      }
+    } catch {}
   }
 
   private getHeaders() {
@@ -32,8 +56,21 @@ export class AirtableQuizStorage {
 
   // Crea nuova sessione quiz
   async createSession(sessionCode: string, professorName: string = 'Professor') {
+    // Se Airtable non è configurato, usa subito il fallback locale senza fare fetch (evita 404 in console)
+    if (!this.enabled) {
+      const session = {
+        code: sessionCode,
+        professor: professorName,
+        createdAt: Date.now(),
+        active: true,
+        students: {}
+      };
+      localStorage.setItem(`session_${sessionCode}`, JSON.stringify(session));
+      return { success: true, sessionId: `local_${sessionCode}` };
+    }
+
     try {
-      const response = await fetch(`${this.baseUrl}/Sessions`, {
+      const response = await fetch(`${this.baseUrl}/${this.tableSessions}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -74,6 +111,24 @@ export class AirtableQuizStorage {
   async joinSession(sessionCode: string, studentName: string, studentSurname: string = '') {
     const studentId = `${studentName}_${studentSurname}_${Date.now()}`;
     
+    // Se Airtable non è configurato, salta direttamente a fallback locale
+    if (!this.enabled) {
+      const sessionKey = `session_${sessionCode}`;
+      const session = JSON.parse(localStorage.getItem(sessionKey) || '{"students": {}}');
+      session.students = session.students || {};
+      session.students[studentId] = {
+        name: studentName,
+        surname: studentSurname,
+        joinedAt: Date.now(),
+        score: 0,
+        completed: false,
+        answers: {},
+        lastActive: Date.now()
+      };
+      localStorage.setItem(sessionKey, JSON.stringify(session));
+      return { success: true, studentId, airtableId: `local_${studentId}` };
+    }
+
     try {
       // Prima verifica se la sessione esiste
       const sessionExists = await this.sessionExists(sessionCode);
@@ -81,7 +136,7 @@ export class AirtableQuizStorage {
         throw new Error('Session not found');
       }
 
-      const response = await fetch(`${this.baseUrl}/Students`, {
+      const response = await fetch(`${this.baseUrl}/${this.tableStudents}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -130,8 +185,30 @@ export class AirtableQuizStorage {
 
   // Salva risposta studente
   async saveAnswer(sessionCode: string, studentId: string, questionIndex: number, answer: number, isCorrect: boolean) {
+    if (!this.enabled) {
+      // Gestione locale: aggiorna localStorage e notifica
+      const sessionKey = `session_${sessionCode}`;
+      const session = JSON.parse(localStorage.getItem(sessionKey) || '{"students": {}}');
+      if (session.students && session.students[studentId]) {
+        session.students[studentId].answers = session.students[studentId].answers || {};
+        session.students[studentId].answers[questionIndex] = {
+          answer,
+          isCorrect,
+          timestamp: Date.now()
+        };
+        const answers = session.students[studentId].answers;
+        const score = Object.values(answers).filter((a: any) => a.isCorrect).length;
+        session.students[studentId].score = score;
+        session.students[studentId].completed = Object.keys(answers).length >= 5;
+        session.students[studentId].lastActive = Date.now();
+        localStorage.setItem(sessionKey, JSON.stringify(session));
+        window.dispatchEvent(new CustomEvent('quizUpdate', { detail: { sessionCode, studentId, questionIndex, score } }));
+      }
+      return true;
+    }
+
     try {
-      const response = await fetch(`${this.baseUrl}/Answers`, {
+      const response = await fetch(`${this.baseUrl}/${this.tableAnswers}`, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -191,10 +268,11 @@ export class AirtableQuizStorage {
 
   // Aggiorna punteggio studente
   private async updateStudentScore(sessionCode: string, studentId: string) {
+    if (!this.enabled) return; // in locale il punteggio è già ricalcolato
     try {
       // Prima ottieni tutte le risposte dello studente
       const answersResponse = await fetch(
-        `${this.baseUrl}/Answers?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
+        `${this.baseUrl}/${this.tableAnswers}?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
         { headers: this.getHeaders() }
       );
 
@@ -205,7 +283,7 @@ export class AirtableQuizStorage {
 
         // Trova il record dello studente
         const studentResponse = await fetch(
-          `${this.baseUrl}/Students?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
+          `${this.baseUrl}/${this.tableStudents}?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
           { headers: this.getHeaders() }
         );
 
@@ -215,7 +293,7 @@ export class AirtableQuizStorage {
             const studentRecord = studentData.records[0];
             
             // Aggiorna punteggio
-            await fetch(`${this.baseUrl}/Students/${studentRecord.id}`, {
+            await fetch(`${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`, {
               method: 'PATCH',
               headers: this.getHeaders(),
               body: JSON.stringify({
@@ -236,10 +314,35 @@ export class AirtableQuizStorage {
 
   // Ottieni dati sessione per dashboard
   async getSessionData(sessionCode: string) {
+    if (!this.enabled) {
+      // Fallback localStorage
+      const sessionKey = `session_${sessionCode}`;
+      const session = JSON.parse(localStorage.getItem(sessionKey) || '{"students": {}}');
+      if (session.students) {
+        const students = Object.entries(session.students).map(([id, data]: [string, any]) => ({
+          id,
+          name: `${data.name} ${data.surname || ''}`.trim(),
+          answers: Object.entries(data.answers || {}).map(([qIndex, answer]: [string, any]) => ({
+            questionId: `q${parseInt(qIndex) + 1}`,
+            selectedAnswer: answer.answer,
+            isCorrect: answer.isCorrect,
+            timestamp: answer.timestamp
+          })),
+          score: data.score || 0,
+          isOnline: Date.now() - (data.lastActive || 0) < 30000,
+          lastActivity: data.lastActive || 0,
+          device: 'Web',
+          sessionCode: sessionCode
+        }));
+        return { students };
+      }
+      return { students: [] };
+    }
+
     try {
       // Ottieni studenti della sessione
       const studentsResponse = await fetch(
-        `${this.baseUrl}/Students?filterByFormula={Session Code}='${sessionCode}'`,
+        `${this.baseUrl}/${this.tableStudents}?filterByFormula={Session Code}='${sessionCode}'`,
         { headers: this.getHeaders() }
       );
 
@@ -251,7 +354,7 @@ export class AirtableQuizStorage {
       
       // Ottieni risposte per calcolare statistiche
       const answersResponse = await fetch(
-        `${this.baseUrl}/Answers?filterByFormula={Session Code}='${sessionCode}'`,
+        `${this.baseUrl}/${this.tableAnswers}?filterByFormula={Session Code}='${sessionCode}'`,
         { headers: this.getHeaders() }
       );
 
@@ -319,9 +422,14 @@ export class AirtableQuizStorage {
 
   // Controlla se sessione esiste
   async sessionExists(sessionCode: string): Promise<boolean> {
+    if (!this.enabled) {
+      // Fallback localStorage
+      const sessionKey = `session_${sessionCode}`;
+      return localStorage.getItem(sessionKey) !== null;
+    }
     try {
       const response = await fetch(
-        `${this.baseUrl}/Sessions?filterByFormula=AND({Session Code}='${sessionCode}',{Active}=TRUE())`,
+        `${this.baseUrl}/${this.tableSessions}?filterByFormula=AND({Session Code}='${sessionCode}',{Active}=TRUE())`,
         { headers: this.getHeaders() }
       );
 
@@ -341,10 +449,20 @@ export class AirtableQuizStorage {
 
   // Heartbeat per mantenere studente attivo
   async updateHeartbeat(sessionCode: string, studentId: string) {
+    if (!this.enabled) {
+      // Fallback localStorage
+      const sessionKey = `session_${sessionCode}`;
+      const session = JSON.parse(localStorage.getItem(sessionKey) || '{"students": {}}');
+      if (session.students && session.students[studentId]) {
+        session.students[studentId].lastActive = Date.now();
+        localStorage.setItem(sessionKey, JSON.stringify(session));
+      }
+      return;
+    }
     try {
       // Trova e aggiorna record studente
       const studentResponse = await fetch(
-        `${this.baseUrl}/Students?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
+        `${this.baseUrl}/${this.tableStudents}?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
         { headers: this.getHeaders() }
       );
 
@@ -353,7 +471,7 @@ export class AirtableQuizStorage {
         if (studentData.records.length > 0) {
           const studentRecord = studentData.records[0];
           
-          await fetch(`${this.baseUrl}/Students/${studentRecord.id}`, {
+          await fetch(`${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`, {
             method: 'PATCH',
             headers: this.getHeaders(),
             body: JSON.stringify({

@@ -29,19 +29,43 @@ Questa guida ti aiuterà a configurare Airtable come backend per il sistema di q
 2. Scegli "Start from scratch"
 3. Rinomina la base in **"QuizEducativo"** o simile
 
-### Passo 3: Configura la Tabella
+### Passo 3: Crea le Tabelle (3 tabelle)
 
-1. Rinomina la tabella predefinita in **"QuizSessions"**
-2. Crea questi campi (clicca sui nomi delle colonne per modificarli):
+Il codice usa 3 tabelle: `Sessions`, `Students`, `Answers`. Puoi cambiare i nomi con le variabili VITE indicate sotto.
 
-| Nome Campo | Tipo Campo | Descrizione |
-|------------|------------|-------------|
-| **SessionCode** | Single line text | Codice sessione a 6 cifre (PRIMARY KEY) |
-| **CreatedAt** | Date and time | Data/ora creazione sessione |
-| **QuizData** | Long text | Dati JSON della sessione |
-| **LastUpdated** | Date and time | Ultimo aggiornamento |
+1) Tabella: **Sessions** (o come preferisci)
 
-3. Imposta **SessionCode** come campo primario (prima colonna)
+| Campo | Tipo | Note |
+|------|------|------|
+| Session Code | Single line text | PRIMARY KEY (prima colonna) |
+| Professor Name | Single line text | opzionale |
+| Created At | Date and time | |
+| Active | Checkbox | default: true |
+| Student Count | Number | opzionale |
+
+2) Tabella: **Students**
+
+| Campo | Tipo | Note |
+|------|------|------|
+| Student ID | Single line text | univoco per studente (prima colonna consigliata) |
+| Session Code | Single line text | codice della sessione |
+| Name | Single line text | |
+| Surname | Single line text | opzionale |
+| Joined At | Date and time | |
+| Score | Number | |
+| Completed | Checkbox | |
+| Last Active | Date and time | |
+
+3) Tabella: **Answers**
+
+| Campo | Tipo | Note |
+|------|------|------|
+| Student ID | Single line text | |
+| Session Code | Single line text | |
+| Question Index | Number | 0-based |
+| Answer | Number | indice della risposta selezionata |
+| Is Correct | Checkbox | |
+| Timestamp | Date and time | |
 
 ### Passo 4: Ottieni le Credenziali API
 
@@ -73,7 +97,11 @@ Questa guida ti aiuterà a configurare Airtable come backend per il sistema di q
 |-------------|--------|---------|
 | `VITE_AIRTABLE_API_KEY` | Il token che hai copiato | `patxxxxxxxxxxxxxx` |
 | `VITE_AIRTABLE_BASE_ID` | Il Base ID della tua base | `appxxxxxxxxxxxxxx` |
-| `VITE_AIRTABLE_TABLE_NAME` | Nome della tabella | `QuizSessions` |
+| `VITE_AIRTABLE_SESSIONS_TABLE` | Nome tabella Sessions | `Sessions` |
+| `VITE_AIRTABLE_STUDENTS_TABLE` | Nome tabella Students | `Students` |
+| `VITE_AIRTABLE_ANSWERS_TABLE` | Nome tabella Answers | `Answers` |
+
+> Dove trovarlo: vai su [airtable.com/api](https://airtable.com/api), seleziona la tua base "QuizEducativo" e copia il codice che inizia con `app` dall'URL (es: `https://airtable.com/appXXXXXXXXXXXXXX/api/docs`).
 
 ### Passo 6: Redeploy del Sito
 
@@ -108,7 +136,7 @@ Access to fetch at 'https://api.airtable.com' blocked by CORS policy
 ```
 {"error":{"type":"TABLE_NOT_FOUND"}}
 ```
-**Soluzione**: Il Base ID o il nome della tabella sono sbagliati.
+**Soluzione**: Il Base ID o il nome di una delle 3 tabelle è sbagliato. Controlla che le variabili `VITE_AIRTABLE_SESSIONS_TABLE`, `VITE_AIRTABLE_STUDENTS_TABLE`, `VITE_AIRTABLE_ANSWERS_TABLE` corrispondano ai nomi reali delle tabelle nella tua base.
 
 ### Fallback a localStorage
 ```

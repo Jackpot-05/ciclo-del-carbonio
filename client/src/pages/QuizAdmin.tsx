@@ -164,6 +164,18 @@ export default function QuizAdmin() {
         </div>
 
         {/* Statistiche */}
+        <Card className="p-4 border-dashed border-2 bg-white/60">
+          <h2 className="text-lg font-semibold text-emerald-800 mb-2">Istruzioni per il Docente</h2>
+          <ol className="list-decimal list-inside text-sm text-emerald-700 space-y-1">
+            <li>Clicca "Genera Nuovo Codice" (già fatto automaticamente all'apertura)</li>
+            <li>Comunica agli studenti il codice: <strong>{sessionCode || '—'}</strong></li>
+            <li>Gli studenti aprono "Quiz Live" e inseriscono il codice</li>
+            <li>Osserva qui in tempo reale chi entra e le loro risposte</li>
+            <li>Per una nuova classe clicca di nuovo "Genera Nuovo Codice"</li>
+          </ol>
+          <p className="mt-3 text-xs text-emerald-600">Se non vedi studenti: verifica che stiano usando esattamente il codice mostrato e che abbiano ricaricato la pagina.</p>
+        </Card>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="p-6 bg-white/80 backdrop-blur">
             <div className="flex items-center gap-3">

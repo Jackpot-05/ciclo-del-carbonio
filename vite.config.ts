@@ -2,8 +2,12 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "node:path";
 
+// Base dinamico: su Vercel usa '/', in produzione GitHub Pages usa '/ciclo-del-carbonio/'
+const isVercel = !!process.env.VERCEL;
+const base = isVercel ? "/" : "/ciclo-del-carbonio/";
+
 export default defineConfig({
-  base: '/ciclo-del-carbonio/',
+  base,
   plugins: [react()],
   resolve: {
     alias: {
@@ -19,9 +23,9 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: undefined
-      }
-    }
+        manualChunks: undefined,
+      },
+    },
   },
   server: {
     fs: {

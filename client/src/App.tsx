@@ -42,10 +42,14 @@ function AppRoutes() {
 }
 
 function App() {
+  // Usa il BASE_URL generato da Vite come base del router (es. '/ciclo-del-carbonio/' su GH Pages, '/' su Vercel)
+  const base = (import.meta as any).env?.BASE_URL
+    ? ((import.meta as any).env.BASE_URL as string).replace(/\/$/, "")
+    : "/";
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base="/ciclo-del-carbonio">
+        <WouterRouter base={base}>
           <div className="min-h-screen flex flex-col bg-background">
             <Navigation />
             <main className="flex-1">

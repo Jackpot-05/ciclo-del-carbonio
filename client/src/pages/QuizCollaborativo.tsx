@@ -227,16 +227,14 @@ export default function QuizCollaborativo() {
     setStudent(updatedStudent);
     
     try {
-      // Salva risposta con Airtable
-      if (selectedAnswer !== null) {
-        await airtableStorage.saveAnswer(
-          classCode, 
-          student.id, 
-          collaborativeQuestions.indexOf(currentQuestion), 
-          selectedAnswer, 
-          isCorrect
-        );
-      }
+      // Salva risposta con Airtable (usa i valori appena calcolati, non lo state ancora da aggiornare)
+      await airtableStorage.saveAnswer(
+        classCode,
+        student.id,
+        currentQuestionIndex,
+        answerIndex,
+        isCorrect
+      );
       
       console.log('🔥 Risposta salvata automaticamente - visibile al prof!');
       
