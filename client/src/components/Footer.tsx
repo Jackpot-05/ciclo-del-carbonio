@@ -23,6 +23,13 @@ export default function Footer() {
                 <span>Sitografia e Bibliografia</span>
               </span>
             </Link>
+            <span className="text-muted-foreground/50">•</span>
+            <Link href="/quiz-admin" data-testid="link-quiz-admin-footer">
+              <span className="flex items-center space-x-1 hover:text-primary transition-colors hover-elevate rounded px-2 py-1">
+                <ExternalLink className="h-4 w-4" />
+                <span>Dashboard Quiz (Admin)</span>
+              </span>
+            </Link>
           </div>
           <p className="text-xs text-muted-foreground mt-4">© 2025 Liceo Vittoria Colonna – Tutti i diritti riservati</p>
           <p className="text-sm text-muted-foreground max-w-2xl mx-auto">

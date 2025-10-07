@@ -14,6 +14,7 @@ const navigationItems = [
   { path: "/ciclo-carbonio", label: "Ciclo del Carbonio" },
   { path: "/elemento-chimico", label: "Elemento Chimico" },
   { path: "/quiz", label: "Quiz" },
+  { path: "/quiz-collaborativo", label: "Quiz Live" },
   { path: "/infografiche", label: "Infografiche" },
   { path: "/lettere-scienza", label: "Lettere e Scienza" },
 ];

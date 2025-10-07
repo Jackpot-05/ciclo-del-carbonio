@@ -50,6 +50,14 @@ export default function Home() {
             />
             
             <SectionCard
+              title="Quiz Live"
+              description="Partecipa al quiz collaborativo in tempo reale con la tua classe."
+              href="/quiz-collaborativo"
+              icon={<Users className="h-6 w-6" />}
+              color="primary"
+            />
+            
+            <SectionCard
               title="Infografiche"
               description="Visualizza diagrammi e infografiche educative per comprendere meglio i processi."
               href="/infografiche"
