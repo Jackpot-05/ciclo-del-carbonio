@@ -5,12 +5,10 @@ import { randomUUID } from "crypto";
 export interface QuizStudent {
   id: string;
   name: string;
-  email: string;
   answers: QuizAnswer[];
   score: number;
   isOnline: boolean;
   lastActivity: number;
-  joinedAt: number;
 }
 
 export interface QuizAnswer {
@@ -100,7 +98,7 @@ export class MemStorage implements IStorage {
       id: randomUUID(),
       answers: [],
       score: 0,
-      joinedAt: Date.now()
+      lastActivity: Date.now()
     };
 
     session.students.set(student.id, student);

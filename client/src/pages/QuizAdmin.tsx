@@ -34,7 +34,6 @@ interface StudentAnswer {
 interface Student {
   id: string;
   name: string;
-  email: string;
   answers: StudentAnswer[];
   score: number;
   isOnline: boolean;
@@ -60,7 +59,6 @@ const mockStudents: Student[] = [
   {
     id: "1",
     name: "Marco Rossi",
-    email: "marco.rossi@scuola.it",
     answers: [
       { questionId: "q1", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 120000 },
       { questionId: "q2", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 90000 },
@@ -73,7 +71,6 @@ const mockStudents: Student[] = [
   {
     id: "2", 
     name: "Sofia Bianchi",
-    email: "sofia.bianchi@scuola.it",
     answers: [
       { questionId: "q1", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 100000 },
       { questionId: "q2", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 70000 },
@@ -87,7 +84,6 @@ const mockStudents: Student[] = [
   {
     id: "3",
     name: "Luca Verde",
-    email: "luca.verde@scuola.it", 
     answers: [
       { questionId: "q1", selectedAnswer: 0, isCorrect: false, timestamp: Date.now() - 150000 },
       { questionId: "q2", selectedAnswer: 2, isCorrect: false, timestamp: Date.now() - 120000 },
@@ -99,7 +95,6 @@ const mockStudents: Student[] = [
   {
     id: "4",
     name: "Emma Gialli",
-    email: "emma.gialli@scuola.it",
     answers: [
       { questionId: "q1", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 80000 },
       { questionId: "q2", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 50000 },
@@ -124,26 +119,71 @@ export default function QuizAdmin() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [stats, setStats] = useState<QuizStats | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<string>("");
 
-  // Simula aggiornamenti in tempo reale
+  // Simula aggiornamenti in tempo reale con modifiche visibili
   useEffect(() => {
     if (!autoRefresh) return;
     
     const interval = setInterval(() => {
-      // Simula nuove risposte e aggiornamenti
       setStudents(prev => {
         const updated = [...prev];
-        const randomStudent = updated[Math.floor(Math.random() * updated.length)];
         
-        // Simula attività casuale
-        if (Math.random() > 0.7) {
+        // Simula nuove risposte e cambiamenti realistici
+        const activeStudents = updated.filter(s => s.isOnline);
+        
+        if (activeStudents.length > 0) {
+          const randomStudent = activeStudents[Math.floor(Math.random() * activeStudents.length)];
+          
+          // 30% chance di aggiungere una nuova risposta
+          if (Math.random() > 0.7 && randomStudent.answers.length < 5) {
+            const nextQuestionId = `q${randomStudent.answers.length + 1}`;
+            const isCorrect = Math.random() > 0.4; // 60% di risposte corrette
+            
+            randomStudent.answers.push({
+              questionId: nextQuestionId,
+              selectedAnswer: Math.floor(Math.random() * 4),
+              isCorrect,
+              timestamp: Date.now()
+            });
+            
+            if (isCorrect) {
+              randomStudent.score++;
+            }
+          }
+          
+          // Aggiorna sempre l'attività
           randomStudent.lastActivity = Date.now();
-          randomStudent.isOnline = Math.random() > 0.2;
+          
+          // 10% chance di cambiare status online
+          if (Math.random() > 0.9) {
+            randomStudent.isOnline = Math.random() > 0.3;
+          }
+        }
+        
+        // Occasionalmente aggiungi un nuovo studente
+        if (Math.random() > 0.95 && updated.length < 8) {
+          const newNames = ["Alessandro Blu", "Giulia Rosa", "Francesco Nero", "Valentina Verde"];
+          const availableNames = newNames.filter(name => !updated.some(s => s.name === name));
+          
+          if (availableNames.length > 0) {
+            const newStudent: Student = {
+              id: `student_${Date.now()}`,
+              name: availableNames[0],
+              answers: [],
+              score: 0,
+              isOnline: true,
+              lastActivity: Date.now()
+            };
+            updated.push(newStudent);
+          }
         }
         
         return updated;
       });
-    }, 3000);
+      
+      setLastUpdate(new Date().toLocaleTimeString());
+    }, 2000); // Ogni 2 secondi per vedere i cambiamenti
     
     return () => clearInterval(interval);
   }, [autoRefresh]);
@@ -193,7 +233,7 @@ export default function QuizAdmin() {
   const exportData = () => {
     const csvData = students.map(student => ({
       Nome: student.name,
-      Email: student.email,
+      ID: student.id,
       Punteggio: student.score,
       Risposte: student.answers.length,
       Online: student.isOnline ? "Sì" : "No",
@@ -223,6 +263,11 @@ export default function QuizAdmin() {
           <p className="text-muted-foreground">
             Monitoraggio in tempo reale delle risposte degli studenti
           </p>
+          {lastUpdate && (
+            <div className="text-xs text-muted-foreground mt-1">
+              Ultimo aggiornamento: {lastUpdate}
+            </div>
+          )}
         </div>
         
         <div className="flex space-x-2">
@@ -343,7 +388,7 @@ export default function QuizAdmin() {
                       <div className={`w-3 h-3 rounded-full ${student.isOnline ? "bg-green-500" : "bg-gray-400"}`} />
                       <div>
                         <div className="font-medium text-foreground">{student.name}</div>
-                        <div className="text-xs text-muted-foreground">{student.email}</div>
+                        <div className="text-xs text-muted-foreground">ID: {student.id.slice(-6)}</div>
                       </div>
                     </div>
                     
@@ -391,7 +436,7 @@ export default function QuizAdmin() {
                 <div className={`w-4 h-4 rounded-full ${selectedStudent.isOnline ? "bg-green-500" : "bg-gray-400"}`} />
                 <div>
                   <div className="font-semibold text-foreground">{selectedStudent.name}</div>
-                  <div className="text-sm text-muted-foreground">{selectedStudent.email}</div>
+                  <div className="text-sm text-muted-foreground">ID: {selectedStudent.id}</div>
                 </div>
               </div>
               

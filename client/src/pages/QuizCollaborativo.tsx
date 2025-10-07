@@ -31,7 +31,6 @@ interface StudentAnswer {
 interface Student {
   id: string;
   name: string;
-  email: string;
   answers: StudentAnswer[];
   score: number;
   isOnline: boolean;
@@ -110,7 +109,6 @@ export default function QuizCollaborativo() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRegistered, setIsRegistered] = useState(false);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,7 +129,7 @@ export default function QuizCollaborativo() {
   }, []);
 
   const handleRegistration = async () => {
-    if (!name.trim() || !email.trim()) return;
+    if (!name.trim()) return;
     
     setIsSubmitting(true);
     
@@ -140,7 +138,6 @@ export default function QuizCollaborativo() {
       const newStudent: Student = {
         id: `student_${Date.now()}`,
         name: name.trim(),
-        email: email.trim(),
         answers: [],
         score: 0,
         isOnline: true
@@ -221,30 +218,20 @@ export default function QuizCollaborativo() {
           
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-foreground">Nome</label>
+              <label className="text-sm font-medium text-foreground">Il tuo nome</label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Il tuo nome"
+                placeholder="Inserisci il tuo nome"
                 className="mt-1"
-              />
-            </div>
-            
-            <div>
-              <label className="text-sm font-medium text-foreground">Email</label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tua.email@scuola.it"
-                className="mt-1"
+                onKeyPress={(e) => e.key === 'Enter' && handleRegistration()}
               />
             </div>
           </div>
           
           <Button
             onClick={handleRegistration}
-            disabled={!name.trim() || !email.trim() || isSubmitting}
+            disabled={!name.trim() || isSubmitting}
             className="w-full"
           >
             {isSubmitting ? "Registrazione..." : "Partecipa al Quiz"}
