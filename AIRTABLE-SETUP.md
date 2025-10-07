@@ -101,6 +101,8 @@ Il codice usa 3 tabelle: `Sessions`, `Students`, `Answers`. Puoi cambiare i nomi
 | `VITE_AIRTABLE_STUDENTS_TABLE` | Nome tabella Students | `Students` |
 | `VITE_AIRTABLE_ANSWERS_TABLE` | Nome tabella Answers | `Answers` |
 
+> Nota: per retrocompatibilità è supportata anche `VITE_AIRTABLE_TABLE_NAME` come alias per il nome della tabella "Sessions". Se presente, verrà usata solo quando `VITE_AIRTABLE_SESSIONS_TABLE` non è impostata.
+
 > Dove trovarlo: vai su [airtable.com/api](https://airtable.com/api), seleziona la tua base "QuizEducativo" e copia il codice che inizia con `app` dall'URL (es: `https://airtable.com/appXXXXXXXXXXXXXX/api/docs`).
 
 ### Passo 6: Redeploy del Sito
