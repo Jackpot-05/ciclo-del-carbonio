@@ -3,10 +3,21 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ciclo del Carbonio - Quiz Collaborativo</title>
+  <title>Ciclo del Carbonio - Redirect</title>
   <script>
-    // Redirect all routes to index.html for SPA routing
-    window.location.replace('/ciclo-del-carbonio/');
+    // Preserva il path originale e reindirizza all'index con ?p=
+    (function () {
+      var repoBase = '/ciclo-del-carbonio';
+      var l = window.location;
+      var path = l.pathname;
+      // Rimuovi il prefisso repoBase dal path, mantieni query e hash
+      if (path.startsWith(repoBase)) {
+        path = path.slice(repoBase.length);
+      }
+      var clean = path + (l.search || '') + (l.hash || '');
+      var target = repoBase + '/?p=' + encodeURIComponent(clean || '/');
+      l.replace(target);
+    })();
   </script>
 </head>
 <body>
