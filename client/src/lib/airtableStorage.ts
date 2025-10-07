@@ -14,7 +14,11 @@ export class AirtableQuizStorage {
     if (viteEnv) {
       this.baseId = viteEnv.VITE_AIRTABLE_BASE_ID || this.baseId;
       this.apiKey = viteEnv.VITE_AIRTABLE_API_KEY || this.apiKey;
-      this.tableSessions = viteEnv.VITE_AIRTABLE_SESSIONS_TABLE || this.tableSessions;
+      // Supporto retrocompatibile: VITE_AIRTABLE_TABLE_NAME come alias per la tabella Sessions
+      this.tableSessions =
+        viteEnv.VITE_AIRTABLE_SESSIONS_TABLE ||
+        viteEnv.VITE_AIRTABLE_TABLE_NAME ||
+        this.tableSessions;
       this.tableStudents = viteEnv.VITE_AIRTABLE_STUDENTS_TABLE || this.tableStudents;
       this.tableAnswers = viteEnv.VITE_AIRTABLE_ANSWERS_TABLE || this.tableAnswers;
     }

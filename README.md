@@ -56,7 +56,16 @@ Il sito funziona out-of-the-box con localStorage, ma per la sincronizzazione in 
 # Nel tuo fork del progetto, configura questi secrets di GitHub:
 VITE_AIRTABLE_API_KEY=pat_xxxxxxxxxx
 VITE_AIRTABLE_BASE_ID=app_xxxxxxxxxx
-VITE_AIRTABLE_TABLE_NAME=QuizSessions
+
+# Preferibile: 3 tabelle separate
+VITE_AIRTABLE_SESSIONS_TABLE=Sessions
+VITE_AIRTABLE_STUDENTS_TABLE=Students
+VITE_AIRTABLE_ANSWERS_TABLE=Answers
+
+# Retrocompat (opzionale): se usi una singola tabella o stai migrando,
+# puoi impostare anche VITE_AIRTABLE_TABLE_NAME, che verrà usata come alias
+# per la tabella Sessions se le variabili sopra non sono presenti.
+# VITE_AIRTABLE_TABLE_NAME=Sessions
 ```
 
 ## 🛠️ Sviluppo Locale
