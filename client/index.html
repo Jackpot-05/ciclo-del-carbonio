@@ -15,7 +15,17 @@
           var params = new URLSearchParams(window.location.search);
           var p = params.get('p');
           if (p) {
-            window.history.replaceState(null, '', p);
+            try {
+              var url = new URL(p, window.location.origin);
+              var pathname = url.pathname;
+              if (pathname.length > 1 && pathname.endsWith('/')) {
+                pathname = pathname.replace(/\/+$/, '');
+              }
+              var restored = pathname + (url.search || '') + (url.hash || '');
+              window.history.replaceState(null, '', restored);
+            } catch {
+              window.history.replaceState(null, '', p);
+            }
           }
         } catch (e) {}
       })();

@@ -15,6 +15,15 @@
         path = path.slice(repoBase.length);
       }
       var clean = path + (l.search || '') + (l.hash || '');
+      // Normalizza: rimuove trailing slash (tranne la root '/')
+      try {
+        var url = new URL(clean, l.origin);
+        var p = url.pathname;
+        if (p.length > 1 && p.endsWith('/')) {
+          p = p.replace(/\/+$/, '');
+        }
+        clean = p + (url.search || '') + (url.hash || '');
+      } catch (e) {}
       var target = repoBase + '/?p=' + encodeURIComponent(clean || '/');
       l.replace(target);
     })();
