@@ -41,6 +41,8 @@ jobs:
           VITE_AIRTABLE_SESSIONS_TABLE: ${{ secrets.VITE_AIRTABLE_SESSIONS_TABLE }}
           VITE_AIRTABLE_STUDENTS_TABLE: ${{ secrets.VITE_AIRTABLE_STUDENTS_TABLE }}
           VITE_AIRTABLE_ANSWERS_TABLE: ${{ secrets.VITE_AIRTABLE_ANSWERS_TABLE }}
+          # In produzione (Pages) abilita fallback locale se i CORS del PAT non sono ancora corretti
+          VITE_AIRTABLE_FORCE_DISABLED: ${{ secrets.VITE_AIRTABLE_FORCE_DISABLED || 'true' }}
           
       - name: Setup Pages
         uses: actions/configure-pages@v4

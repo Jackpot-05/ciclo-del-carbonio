@@ -38,6 +38,7 @@ jobs:
           VITE_AIRTABLE_SESSIONS_TABLE: ${{ secrets.VITE_AIRTABLE_SESSIONS_TABLE }}
           VITE_AIRTABLE_STUDENTS_TABLE: ${{ secrets.VITE_AIRTABLE_STUDENTS_TABLE }}
           VITE_AIRTABLE_ANSWERS_TABLE: ${{ secrets.VITE_AIRTABLE_ANSWERS_TABLE }}
+          VITE_AIRTABLE_FORCE_DISABLED: ${{ secrets.VITE_AIRTABLE_FORCE_DISABLED || 'true' }}
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4

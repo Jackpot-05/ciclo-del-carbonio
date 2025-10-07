@@ -58,6 +58,20 @@ export class AirtableQuizStorage {
     } catch {}
   }
 
+  // Escape sicuro per valori in formula Airtable (gestisce apostrofi)
+  private esc(val: string): string {
+    try {
+      return String(val).replace(/'/g, "\\'");
+    } catch {
+      return String(val || '');
+    }
+  }
+
+  // Encoda la formula completa per la querystring
+  private encFormula(formula: string): string {
+    return encodeURIComponent(formula);
+  }
+
   private handleAuthError(status: number) {
     if (status === 401 || status === 403) {
       this.enabled = false;
@@ -304,10 +318,13 @@ export class AirtableQuizStorage {
     if (!this.enabled) return; // in locale il punteggio è già ricalcolato
     try {
       // Prima ottieni tutte le risposte dello studente
-      const answersResponse = await fetch(
-        `${this.baseUrl}/${this.tableAnswers}?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
+      {
+        const formula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
+        var answersResponse = await fetch(
+          `${this.baseUrl}/${this.tableAnswers}?filterByFormula=${formula}`,
         { headers: this.getHeaders() }
-      );
+        );
+      }
 
       if (answersResponse.ok) {
         const answersData = await answersResponse.json();
@@ -315,8 +332,9 @@ export class AirtableQuizStorage {
         const totalAnswers = answersData.records.length;
 
         // Trova il record dello studente
+        const studentFormula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
         const studentResponse = await fetch(
-          `${this.baseUrl}/${this.tableStudents}?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
+          `${this.baseUrl}/${this.tableStudents}?filterByFormula=${studentFormula}`,
           { headers: this.getHeaders() }
         );
 
@@ -376,8 +394,9 @@ export class AirtableQuizStorage {
 
     try {
       // Ottieni studenti della sessione
+      const studentsFormula = this.encFormula(`{Session Code}='${this.esc(sessionCode)}'`);
       const studentsResponse = await fetch(
-        `${this.baseUrl}/${this.tableStudents}?filterByFormula={Session Code}='${sessionCode}'`,
+        `${this.baseUrl}/${this.tableStudents}?filterByFormula=${studentsFormula}`,
         { headers: this.getHeaders() }
       );
 
@@ -389,8 +408,9 @@ export class AirtableQuizStorage {
       const studentsData = await studentsResponse.json();
       
       // Ottieni risposte per calcolare statistiche
+      const answersFormula = this.encFormula(`{Session Code}='${this.esc(sessionCode)}'`);
       const answersResponse = await fetch(
-        `${this.baseUrl}/${this.tableAnswers}?filterByFormula={Session Code}='${sessionCode}'`,
+        `${this.baseUrl}/${this.tableAnswers}?filterByFormula=${answersFormula}`,
         { headers: this.getHeaders() }
       );
 
@@ -466,8 +486,9 @@ export class AirtableQuizStorage {
       return localStorage.getItem(sessionKey) !== null;
     }
     try {
+      const formula = this.encFormula(`AND({Session Code}='${this.esc(sessionCode)}',{Active}=TRUE())`);
       const response = await fetch(
-        `${this.baseUrl}/${this.tableSessions}?filterByFormula=AND({Session Code}='${sessionCode}',{Active}=TRUE())`,
+        `${this.baseUrl}/${this.tableSessions}?filterByFormula=${formula}`,
         { headers: this.getHeaders() }
       );
 
@@ -500,8 +521,9 @@ export class AirtableQuizStorage {
     }
     try {
       // Trova e aggiorna record studente
+      const formula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
       const studentResponse = await fetch(
-        `${this.baseUrl}/${this.tableStudents}?filterByFormula=AND({Student ID}='${studentId}',{Session Code}='${sessionCode}')`,
+        `${this.baseUrl}/${this.tableStudents}?filterByFormula=${formula}`,
         { headers: this.getHeaders() }
       );
 
