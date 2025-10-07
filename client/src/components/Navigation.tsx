@@ -2,6 +2,7 @@ import { Link, useLocation } from "wouter";
 import { useState } from "react";
 import { Menu, X, BookOpen, Atom, ChevronDown, Leaf, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { airtableStorage } from "@/lib/airtableStorage";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,7 @@ export default function Navigation() {
   
   // Check if current location is in sustainability section
   const isSustainabilityActive = sustainabilityItems.some(item => item.path === location);
+  const isAirtableEnabled = typeof (airtableStorage as any)?.isEnabled === 'function' ? (airtableStorage as any).isEnabled() : false;
 
   return (
     <nav className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
@@ -82,6 +84,14 @@ export default function Navigation() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Backend mode indicator */}
+            <span className="ml-2 text-xs text-muted-foreground">
+              Backend:
+              <span className={"ml-1 font-medium " + (isAirtableEnabled ? "text-green-600" : "text-amber-600")}>
+                {isAirtableEnabled ? "Airtable" : "Locale"}
+              </span>
+            </span>
           </div>
 
           {/* Mobile Menu Button */}
@@ -135,6 +145,9 @@ export default function Navigation() {
                     </Button>
                   </Link>
                 ))}
+                <div className="mt-2 text-xs text-muted-foreground">
+                  Backend: <span className={isAirtableEnabled ? "text-green-600" : "text-amber-600"}>{isAirtableEnabled ? "Airtable" : "Locale"}</span>
+                </div>
               </div>
             </div>
           </div>
