@@ -1,7 +1,13 @@
 import { Link, useLocation } from "wouter";
 import { useState } from "react";
-import { Menu, X, BookOpen, Atom } from "lucide-react";
+import { Menu, X, BookOpen, Atom, ChevronDown, Leaf, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navigationItems = [
   { path: "/", label: "Home", icon: BookOpen },
@@ -9,15 +15,20 @@ const navigationItems = [
   { path: "/elemento-chimico", label: "Elemento Chimico" },
   { path: "/quiz", label: "Quiz" },
   { path: "/infografiche", label: "Infografiche" },
-  { path: "/educazione-civica", label: "Educazione Civica" },
-  { path: "/cittadino-consapevole", label: "Cittadino Consapevole" },
   { path: "/lettere-scienza", label: "Lettere e Scienza" },
-  { path: "/bibliografia", label: "Sitografia e Bibliografia" },
+];
+
+const sustainabilityItems = [
+  { path: "/educazione-civica", label: "Educazione Civica", icon: Leaf },
+  { path: "/cittadino-consapevole", label: "Cittadino Consapevole", icon: Users },
 ];
 
 export default function Navigation() {
   const [location] = useLocation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  
+  // Check if current location is in sustainability section
+  const isSustainabilityActive = sustainabilityItems.some(item => item.path === location);
 
   return (
     <nav className="sticky top-0 z-50 bg-background border-b border-border shadow-sm">
@@ -34,22 +45,46 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden xl:flex items-center space-x-1">
+          <div className="hidden lg:flex items-center space-x-1">
             {navigationItems.map((item) => (
               <Link key={item.path} href={item.path} data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
                 <Button
                   variant={location === item.path ? "default" : "ghost"}
                   size="sm"
-                  className="text-xs font-medium whitespace-nowrap"
+                  className="text-sm font-medium"
                 >
                   {item.label}
                 </Button>
               </Link>
             ))}
+            
+            {/* Sustainability Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={isSustainabilityActive ? "default" : "ghost"}
+                  size="sm"
+                  className="text-sm font-medium"
+                >
+                  Sostenibilità
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {sustainabilityItems.map((item) => (
+                  <DropdownMenuItem key={item.path} asChild>
+                    <Link href={item.path} className="flex items-center w-full">
+                      <item.icon className="mr-2 h-4 w-4" />
+                      <span>{item.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="xl:hidden">
+          <div className="lg:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -63,7 +98,7 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="xl:hidden border-t border-border bg-card">
+          <div className="lg:hidden border-t border-border bg-card">
             <div className="py-2 space-y-1">
               {navigationItems.map((item) => (
                 <Link
@@ -80,6 +115,26 @@ export default function Navigation() {
                   </Button>
                 </Link>
               ))}
+              
+              {/* Mobile Sustainability Section */}
+              <div className="px-3 py-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Sostenibilità</p>
+                {sustainabilityItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Button
+                      variant={location === item.path ? "default" : "ghost"}
+                      className="w-full justify-start text-sm mb-1"
+                    >
+                      <item.icon className="mr-2 h-4 w-4" />
+                      {item.label}
+                    </Button>
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         )}
