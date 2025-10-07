@@ -133,20 +133,56 @@ export default function QuizCollaborativo() {
     
     setIsSubmitting(true);
     
-    // Simula chiamata API di registrazione
-    setTimeout(() => {
-      const newStudent: Student = {
-        id: `student_${Date.now()}`,
-        name: name.trim(),
-        answers: [],
-        score: 0,
-        isOnline: true
-      };
+    const newStudent: Student = {
+      id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      name: name.trim(),
+      answers: [],
+      score: 0,
+      isOnline: true
+    };
+    
+    try {
+      // Prova chiamata API (potrebbe fallire su Vercel)
+      const response = await fetch('/api/quiz/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name.trim(),
+          isOnline: true
+        }),
+      });
       
+      if (response.ok) {
+        const apiStudent = await response.json();
+        setStudent(apiStudent);
+        console.log('✅ Studente registrato via API:', apiStudent);
+        
+        // Salva anche in localStorage per persistenza
+        const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
+        allStudents.push(apiStudent);
+        localStorage.setItem('quiz_students', JSON.stringify(allStudents));
+      } else {
+        throw new Error('API non disponibile');
+      }
+    } catch (error) {
+      console.warn('⚠️ API non disponibile, uso localStorage:', error);
+      
+      // Fallback: uso localStorage come storage principale
       setStudent(newStudent);
-      setIsRegistered(true);
-      setIsSubmitting(false);
-    }, 1000);
+      
+      // Salva in localStorage
+      const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
+      allStudents.push(newStudent);
+      localStorage.setItem('quiz_students', JSON.stringify(allStudents));
+      localStorage.setItem('current_student', JSON.stringify(newStudent));
+      
+      console.log('📱 Studente salvato in localStorage:', newStudent);
+    }
+    
+    setIsRegistered(true);
+    setIsSubmitting(false);
   };
 
   const handleAnswer = async (answerIndex: number) => {
@@ -164,17 +200,50 @@ export default function QuizCollaborativo() {
       timestamp: Date.now()
     };
     
-    // Simula chiamata API
-    setTimeout(() => {
-      const updatedStudent = {
-        ...student,
-        answers: [...student.answers, answer],
-        score: student.score + (isCorrect ? 1 : 0)
-      };
+    // Aggiorna studente locale immediatamente
+    const updatedStudent = {
+      ...student,
+      answers: [...student.answers, answer],
+      score: student.score + (isCorrect ? 1 : 0),
+      lastActivity: Date.now()
+    };
+    
+    setStudent(updatedStudent);
+    
+    try {
+      // Prova a inviare al backend
+      const response = await fetch('/api/quiz/answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          studentId: student.id,
+          answer: answer
+        }),
+      });
       
-      setStudent(updatedStudent);
-      setIsSubmitting(false);
-    }, 500);
+      if (response.ok) {
+        console.log('✅ Risposta inviata via API:', answer);
+      } else {
+        throw new Error('API non disponibile');
+      }
+    } catch (error) {
+      console.warn('⚠️ API non disponibile per risposta, salvo in localStorage');
+    }
+    
+    // Salva sempre in localStorage per persistenza
+    const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
+    const studentIndex = allStudents.findIndex((s: Student) => s.id === student.id);
+    if (studentIndex >= 0) {
+      allStudents[studentIndex] = updatedStudent;
+    } else {
+      allStudents.push(updatedStudent);
+    }
+    localStorage.setItem('quiz_students', JSON.stringify(allStudents));
+    localStorage.setItem('current_student', JSON.stringify(updatedStudent));
+    
+    setIsSubmitting(false);
   };
 
   const nextQuestion = () => {

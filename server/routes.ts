@@ -3,7 +3,62 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Quiz collaborativo routes
+  // Crea una sessione di default se non esiste
+  const getOrCreateDefaultSession = async () => {
+    const sessions = await storage.getActiveSessions();
+    if (sessions.length === 0) {
+      return await storage.createQuizSession("Quiz Collaborativo Principale");
+    }
+    return sessions[0];
+  };
+
+  // API semplici per il frontend
+  
+  // Registrazione studente (semplificata)
+  app.post("/api/quiz/register", async (req, res) => {
+    try {
+      const { name, isOnline } = req.body;
+      const session = await getOrCreateDefaultSession();
+      
+      const student = await storage.addStudentToQuiz(session.id, {
+        name,
+        isOnline: isOnline || true
+      });
+      
+      res.json(student);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Invio risposta (semplificata)
+  app.post("/api/quiz/answer", async (req, res) => {
+    try {
+      const { studentId, answer } = req.body;
+      const session = await getOrCreateDefaultSession();
+      
+      await storage.submitAnswer(session.id, studentId, answer);
+      
+      // Ritorna lo studente aggiornato
+      const updatedStudent = await storage.getStudent(session.id, studentId);
+      res.json(updatedStudent);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Lista studenti (semplificata)
+  app.get("/api/quiz/students", async (req, res) => {
+    try {
+      const session = await getOrCreateDefaultSession();
+      const students = await storage.getSessionStudents(session.id);
+      res.json({ students: Array.from(students.values()) });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message, students: [] });
+    }
+  });
+
+  // Quiz collaborativo routes (esistenti)
   
   // Crea una nuova sessione quiz
   app.post("/api/quiz/session", async (req, res) => {
@@ -20,13 +75,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/quiz/session/:sessionId/join", async (req, res) => {
     try {
       const { sessionId } = req.params;
-      const { name, email } = req.body;
+      const { name } = req.body;
       
       const student = await storage.addStudentToQuiz(sessionId, {
         name,
-        email,
-        isOnline: true,
-        lastActivity: Date.now()
+        isOnline: true
       });
       
       res.json(student);

@@ -115,78 +115,100 @@ const questionTitles = [
 ];
 
 export default function QuizAdmin() {
-  const [students, setStudents] = useState<Student[]>(mockStudents);
+  const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [stats, setStats] = useState<QuizStats | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Simula aggiornamenti in tempo reale con modifiche visibili
+  // Funzione per caricare dati da localStorage
+  const loadFromLocalStorage = (): Student[] => {
+    try {
+      const students = JSON.parse(localStorage.getItem('quiz_students') || '[]');
+      console.log('📱 Caricati studenti da localStorage:', students.length);
+      return students;
+    } catch (error) {
+      console.error('❌ Errore lettura localStorage:', error);
+      return [];
+    }
+  };
+
+  // Funzione per caricare dati reali dal backend
+  const fetchStudentsData = async () => {
+    try {
+      const response = await fetch('/api/quiz/students');
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ Dati studenti da API:', data.students?.length || 0);
+        return data.students || [];
+      } else {
+        console.warn('⚠️ API non disponibile, uso localStorage');
+        return null;
+      }
+    } catch (error) {
+      console.warn('⚠️ Errore API, uso localStorage:', error);
+      return null;
+    }
+  };
+
+  // Caricamento iniziale dati
+  useEffect(() => {
+    const loadInitialData = async () => {
+      setIsLoading(true);
+      
+      // Prova prima con API
+      const apiStudents = await fetchStudentsData();
+      
+      if (apiStudents !== null && apiStudents.length > 0) {
+        setStudents(apiStudents);
+        console.log('🚀 Usando dati da API');
+      } else {
+        // Fallback: localStorage
+        const localStudents = loadFromLocalStorage();
+        if (localStudents.length > 0) {
+          setStudents(localStudents);
+          console.log('📱 Usando dati da localStorage');
+        } else {
+          // Ultimo fallback: mock data
+          setStudents(mockStudents);
+          console.log('📋 Usando mock data come demo');
+        }
+      }
+      
+      setIsLoading(false);
+      setLastUpdate(new Date().toLocaleTimeString());
+    };
+    
+    loadInitialData();
+  }, []);
+
+  // Aggiornamenti automatici (priorità: API > localStorage > mock)
   useEffect(() => {
     if (!autoRefresh) return;
     
-    const interval = setInterval(() => {
-      setStudents(prev => {
-        const updated = [...prev];
-        
-        // Simula nuove risposte e cambiamenti realistici
-        const activeStudents = updated.filter(s => s.isOnline);
-        
-        if (activeStudents.length > 0) {
-          const randomStudent = activeStudents[Math.floor(Math.random() * activeStudents.length)];
-          
-          // 30% chance di aggiungere una nuova risposta
-          if (Math.random() > 0.7 && randomStudent.answers.length < 5) {
-            const nextQuestionId = `q${randomStudent.answers.length + 1}`;
-            const isCorrect = Math.random() > 0.4; // 60% di risposte corrette
-            
-            randomStudent.answers.push({
-              questionId: nextQuestionId,
-              selectedAnswer: Math.floor(Math.random() * 4),
-              isCorrect,
-              timestamp: Date.now()
-            });
-            
-            if (isCorrect) {
-              randomStudent.score++;
-            }
-          }
-          
-          // Aggiorna sempre l'attività
-          randomStudent.lastActivity = Date.now();
-          
-          // 10% chance di cambiare status online
-          if (Math.random() > 0.9) {
-            randomStudent.isOnline = Math.random() > 0.3;
-          }
+    const interval = setInterval(async () => {
+      // Prova a caricare dati reali dal backend
+      const apiStudents = await fetchStudentsData();
+      
+      if (apiStudents !== null) {
+        setStudents(apiStudents);
+      } else {
+        // Fallback: ricarica da localStorage (potrebbero essere cambiati)
+        const localStudents = loadFromLocalStorage();
+        if (localStudents.length > 0) {
+          setStudents(localStudents);
+        } else if (students.length === 0) {
+          // Solo se non abbiamo nessun dato, usa mock
+          setStudents(mockStudents);
         }
-        
-        // Occasionalmente aggiungi un nuovo studente
-        if (Math.random() > 0.95 && updated.length < 8) {
-          const newNames = ["Alessandro Blu", "Giulia Rosa", "Francesco Nero", "Valentina Verde"];
-          const availableNames = newNames.filter(name => !updated.some(s => s.name === name));
-          
-          if (availableNames.length > 0) {
-            const newStudent: Student = {
-              id: `student_${Date.now()}`,
-              name: availableNames[0],
-              answers: [],
-              score: 0,
-              isOnline: true,
-              lastActivity: Date.now()
-            };
-            updated.push(newStudent);
-          }
-        }
-        
-        return updated;
-      });
+      }
       
       setLastUpdate(new Date().toLocaleTimeString());
-    }, 2000); // Ogni 2 secondi per vedere i cambiamenti
+    }, 2000); // Ogni 2 secondi
     
     return () => clearInterval(interval);
-  }, [autoRefresh]);
+  }, [autoRefresh, students.length]);
 
   // Calcola statistiche
   useEffect(() => {

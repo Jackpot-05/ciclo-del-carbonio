@@ -87,7 +87,7 @@ export class MemStorage implements IStorage {
     return this.quizSessions.get(id);
   }
 
-  async addStudentToQuiz(sessionId: string, studentData: Omit<QuizStudent, 'id' | 'answers' | 'score' | 'joinedAt'>): Promise<QuizStudent> {
+  async addStudentToQuiz(sessionId: string, studentData: Omit<QuizStudent, 'id' | 'answers' | 'score' | 'lastActivity'>): Promise<QuizStudent> {
     const session = this.quizSessions.get(sessionId);
     if (!session) {
       throw new Error('Quiz session not found');
@@ -158,6 +158,21 @@ export class MemStorage implements IStorage {
       averageScore,
       students
     };
+  }
+
+  // Metodi aggiuntivi per le API semplici
+  async getActiveSessions(): Promise<QuizSession[]> {
+    return Array.from(this.quizSessions.values()).filter(session => session.isActive);
+  }
+
+  async getStudent(sessionId: string, studentId: string): Promise<QuizStudent | undefined> {
+    const session = this.quizSessions.get(sessionId);
+    return session?.students.get(studentId);
+  }
+
+  async getSessionStudents(sessionId: string): Promise<Map<string, QuizStudent>> {
+    const session = this.quizSessions.get(sessionId);
+    return session?.students || new Map();
   }
 }
 
