@@ -7,6 +7,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // Import pages
 import Home from "@/pages/Home";
 import CicloCarbonio from "@/pages/CicloCarbonio";
+import ElementoChimico from "@/pages/ElementoChimico";
 import Quiz from "@/pages/Quiz";
 import Infografiche from "@/pages/Infografiche";
 import EducazioneCivica from "@/pages/EducazioneCivica";
@@ -24,6 +25,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/ciclo-carbonio" component={CicloCarbonio} />
+      <Route path="/elemento-chimico" component={ElementoChimico} />
       <Route path="/quiz" component={Quiz} />
       <Route path="/infografiche" component={Infografiche} />
       <Route path="/educazione-civica" component={EducazioneCivica} />

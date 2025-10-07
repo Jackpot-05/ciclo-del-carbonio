@@ -11,8 +11,8 @@ export default function Home() {
             Il Ciclo del Carbonio
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Esplora il viaggio del carbonio attraverso atmosfera, biosfera, idrosfera e geosfera. 
-            Un progetto educativo completo per studenti delle scuole superiori.
+            Esplora il viaggio del carbonio, elemento fondamentale per la vita e chiave dell'effetto serra. 
+            Scopri come i suoi scambi tra atmosfera, biosfera, idrosfera e geosfera influenzano il clima terrestre.
           </p>
         </div>
       </section>
@@ -31,6 +31,14 @@ export default function Home() {
               href="/ciclo-carbonio"
               icon={<Atom className="h-6 w-6" />}
               color="primary"
+            />
+            
+            <SectionCard
+              title="Elemento Chimico"
+              description="Esplora le proprietà fondamentali del carbonio: struttura atomica, allotropi e capacità di legame."
+              href="/elemento-chimico"
+              icon={<Atom className="h-6 w-6" />}
+              color="accent"
             />
             
             <SectionCard

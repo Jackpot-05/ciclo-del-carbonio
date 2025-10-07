@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 const navigationItems = [
   { path: "/", label: "Home", icon: BookOpen },
   { path: "/ciclo-carbonio", label: "Ciclo del Carbonio" },
+  { path: "/elemento-chimico", label: "Elemento Chimico" },
   { path: "/quiz", label: "Quiz" },
   { path: "/infografiche", label: "Infografiche" },
   { path: "/educazione-civica", label: "Educazione Civica" },
