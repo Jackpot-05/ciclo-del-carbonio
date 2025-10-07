@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Users, Clock, HelpCircle } from "lucide-react";
 import { cloudStorage } from "@/lib/cloudStorage";
+import { simpleCloudStorage } from "@/lib/simpleCloudStorage";
 import {
   Tooltip,
   TooltipContent,
@@ -115,6 +116,7 @@ export default function QuizCollaborativo() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [connectedStudents, setConnectedStudents] = useState<number>(1);
+  const [shareUrl, setShareUrl] = useState<string>("");
 
   const currentQuestion = collaborativeQuestions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === collaborativeQuestions.length - 1;
@@ -143,41 +145,23 @@ export default function QuizCollaborativo() {
     };
     
     try {
-      // Salva nel cloud storage per sincronizzazione cross-device
-      const cloudSuccess = await cloudStorage.saveStudent({
+      // Usa storage semplificato e affidabile
+      const result = await simpleCloudStorage.saveStudent({
         ...newStudent,
         lastActivity: Date.now(),
         device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
-        createdAt: Date.now()
+        timestamp: Date.now()
       });
       
-      if (cloudSuccess) {
-        console.log('☁️ Studente registrato nel cloud:', newStudent.name);
-      }
-      
-      // Prova anche chiamata API backend (se disponibile)
-      try {
-        const response = await fetch('/api/quiz/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: name.trim(),
-            isOnline: true
-          }),
-        });
-        
-        if (response.ok) {
-          console.log('✅ Studente registrato anche via API backend');
-        }
-      } catch (apiError) {
-        console.log('ℹ️ API backend non disponibile (normale su Vercel)');
+      if (result.success && result.shareUrl) {
+        setShareUrl(result.shareUrl);
+        console.log('✅ Studente salvato con URL condivisibile');
+        console.log('🔗 Condividi questo link per vedere i risultati:', result.shareUrl);
       }
       
       setStudent(newStudent);
       
-      // Salva anche in localStorage come backup locale
+      // Salva anche in localStorage per backup
       const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
       allStudents.push(newStudent);
       localStorage.setItem('quiz_students', JSON.stringify(allStudents));
@@ -186,7 +170,7 @@ export default function QuizCollaborativo() {
     } catch (error) {
       console.error('❌ Errore registrazione:', error);
       
-      // Fallback completo: solo localStorage
+      // Fallback: solo localStorage
       setStudent(newStudent);
       const allStudents = JSON.parse(localStorage.getItem('quiz_students') || '[]');
       allStudents.push(newStudent);
@@ -225,39 +209,20 @@ export default function QuizCollaborativo() {
     setStudent(updatedStudent);
     
     try {
-      // Salva aggiornamento nel cloud storage
-      const cloudSuccess = await cloudStorage.saveStudent({
+      // Salva aggiornamento con storage semplificato
+      const result = await simpleCloudStorage.saveStudent({
         ...updatedStudent,
         device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
-        createdAt: Date.now()
+        timestamp: Date.now()
       });
       
-      if (cloudSuccess) {
-        console.log('☁️ Risposta salvata nel cloud:', answer.questionId);
-      }
-      
-      // Prova a inviare al backend (se disponibile)
-      try {
-        const response = await fetch('/api/quiz/answer', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            studentId: student.id,
-            answer: answer
-          }),
-        });
-        
-        if (response.ok) {
-          console.log('✅ Risposta inviata anche via API backend');
-        }
-      } catch (apiError) {
-        console.log('ℹ️ API backend non disponibile per risposta');
+      if (result.success && result.shareUrl) {
+        setShareUrl(result.shareUrl);
+        console.log('✅ Risposta salvata con URL aggiornato');
       }
       
     } catch (error) {
-      console.warn('⚠️ Errore salvataggio cloud per risposta');
+      console.warn('⚠️ Errore salvataggio risposta');
     }
     
     // Salva sempre in localStorage come backup
@@ -281,6 +246,13 @@ export default function QuizCollaborativo() {
       setCurrentQuestionIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setHasAnswered(false);
+    }
+  };
+
+  const copyShareUrl = () => {
+    if (shareUrl) {
+      navigator.clipboard.writeText(shareUrl);
+      alert('Link copiato! Condividi questo link per far vedere i tuoi risultati al professore.');
     }
   };
 

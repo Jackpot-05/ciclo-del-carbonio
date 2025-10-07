@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cloudStorage } from "@/lib/cloudStorage";
+import { simpleCloudStorage } from "@/lib/simpleCloudStorage";
 import { 
   Users, 
   CheckCircle, 
@@ -127,6 +128,22 @@ export default function QuizAdmin() {
   const [isLoading, setIsLoading] = useState(true);
   const [dataSource, setDataSource] = useState<'cloud' | 'api' | 'local' | 'mock'>('cloud');
 
+  // Funzione per caricare dati dal cloud semplificato
+  const loadFromSimpleCloud = async (): Promise<Student[] | null> => {
+    try {
+      const cloudStudents = await simpleCloudStorage.loadAllStudents();
+      if (cloudStudents.length > 0) {
+        console.log('🔗 Caricati studenti dal storage semplificato:', cloudStudents.length);
+        setDataSource('cloud');
+        return cloudStudents;
+      }
+      return null;
+    } catch (error) {
+      console.warn('⚠️ Errore storage semplificato:', error);
+      return null;
+    }
+  };
+
   // Funzione per caricare dati dal cloud
   const loadFromCloud = async (): Promise<Student[] | null> => {
     try {
@@ -172,36 +189,44 @@ export default function QuizAdmin() {
     }
   };
 
-  // Caricamento iniziale dati con priorità cloud
+  // Caricamento iniziale dati con priorità: Simple Cloud > Cloud > API > localStorage > mock
   useEffect(() => {
     const loadInitialData = async () => {
       setIsLoading(true);
       
-      // 1. Prova prima con Cloud Storage
-      const cloudStudents = await loadFromCloud();
-      if (cloudStudents && cloudStudents.length > 0) {
-        setStudents(cloudStudents);
+      // 1. Prova prima con Simple Cloud Storage (URL + localStorage)
+      const simpleCloudStudents = await loadFromSimpleCloud();
+      if (simpleCloudStudents && simpleCloudStudents.length > 0) {
+        setStudents(simpleCloudStudents);
         setDataSource('cloud');
-        console.log('☁️ Usando dati dal cloud storage');
+        console.log('🔗 Usando dati dal storage semplificato');
       } else {
-        // 2. Fallback: API backend
-        const apiStudents = await fetchStudentsData();
-        if (apiStudents !== null && apiStudents.length > 0) {
-          setStudents(apiStudents);
-          setDataSource('api');
-          console.log('🚀 Usando dati da API backend');
+        // 2. Fallback: Cloud Storage originale
+        const cloudStudents = await loadFromCloud();
+        if (cloudStudents && cloudStudents.length > 0) {
+          setStudents(cloudStudents);
+          setDataSource('cloud');
+          console.log('☁️ Usando dati dal cloud storage');
         } else {
-          // 3. Fallback: localStorage
-          const localStudents = loadFromLocalStorage();
-          if (localStudents.length > 0) {
-            setStudents(localStudents);
-            setDataSource('local');
-            console.log('📱 Usando dati da localStorage');
+          // 3. Fallback: API backend
+          const apiStudents = await fetchStudentsData();
+          if (apiStudents !== null && apiStudents.length > 0) {
+            setStudents(apiStudents);
+            setDataSource('api');
+            console.log('🚀 Usando dati da API backend');
           } else {
-            // 4. Ultimo fallback: mock data
-            setStudents(mockStudents);
-            setDataSource('mock');
-            console.log('📋 Usando mock data come demo');
+            // 4. Fallback: localStorage
+            const localStudents = loadFromLocalStorage();
+            if (localStudents.length > 0) {
+              setStudents(localStudents);
+              setDataSource('local');
+              console.log('📱 Usando dati da localStorage');
+            } else {
+              // 5. Ultimo fallback: mock data per demo
+              setStudents(mockStudents);
+              setDataSource('mock');
+              console.log('📋 Usando mock data come demo');
+            }
           }
         }
       }
