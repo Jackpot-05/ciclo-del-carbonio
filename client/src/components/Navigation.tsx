@@ -34,13 +34,13 @@ export default function Navigation() {
           </Link>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex items-center space-x-1">
+          <div className="hidden xl:flex items-center space-x-1">
             {navigationItems.map((item) => (
               <Link key={item.path} href={item.path} data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
                 <Button
                   variant={location === item.path ? "default" : "ghost"}
                   size="sm"
-                  className="text-sm font-medium"
+                  className="text-xs font-medium whitespace-nowrap"
                 >
                   {item.label}
                 </Button>
@@ -49,7 +49,7 @@ export default function Navigation() {
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="lg:hidden">
+          <div className="xl:hidden">
             <Button
               variant="ghost"
               size="icon"
@@ -63,7 +63,7 @@ export default function Navigation() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="lg:hidden border-t border-border bg-card">
+          <div className="xl:hidden border-t border-border bg-card">
             <div className="py-2 space-y-1">
               {navigationItems.map((item) => (
                 <Link

@@ -42,6 +42,17 @@ export default function ElementoChimico() {
                 4 elettroni di valenza nel guscio esterno
               </p>
             </div>
+            
+            {/* Immagine tavola periodica */}
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-100 p-4 rounded-lg border">
+              <div className="text-center">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg mx-auto mb-3 flex items-center justify-center text-white font-bold text-2xl">
+                  C
+                </div>
+                <p className="text-sm text-gray-600">Carbonio nella Tavola Periodica</p>
+                <p className="text-xs text-gray-500">Gruppo 14, Periodo 2</p>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -56,6 +67,27 @@ export default function ElementoChimico() {
                 <li><span className="font-medium">Stati di ossidazione:</span> -4, +2, +4</li>
                 <li><span className="font-medium">Raggio atomico:</span> 70 pm</li>
               </ul>
+            </div>
+
+            {/* Rappresentazione visiva atomo */}
+            <div className="bg-gradient-to-br from-red-50 to-orange-100 p-4 rounded-lg border">
+              <div className="text-center space-y-3">
+                <h4 className="font-medium text-foreground">Struttura Atomica</h4>
+                <div className="relative w-24 h-24 mx-auto">
+                  {/* Nucleo */}
+                  <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">6p+</span>
+                  </div>
+                  {/* Elettroni */}
+                  <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="absolute top-1/2 left-2 transform -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="absolute top-1/2 right-2 transform -translate-y-1/2 w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="absolute top-4 right-4 w-2 h-2 bg-green-500 rounded-full"></div>
+                  <div className="absolute bottom-4 left-4 w-2 h-2 bg-green-500 rounded-full"></div>
+                </div>
+                <p className="text-xs text-gray-600">6 protoni, 6 elettroni</p>
+              </div>
             </div>
 
             <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
@@ -90,8 +122,14 @@ export default function ElementoChimico() {
           {/* Grafite */}
           <Card className="p-6 space-y-4 bg-card border-border">
             <div className="text-center">
-              <div className="w-16 h-16 bg-slate-600 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                <Layers className="h-8 w-8 text-white" />
+              <div className="w-16 h-16 bg-gradient-to-br from-gray-600 to-gray-800 rounded-lg mx-auto mb-3 flex items-center justify-center relative overflow-hidden">
+                {/* Rappresentazione strati grafite */}
+                <div className="absolute inset-2">
+                  <div className="w-full h-0.5 bg-gray-300 mb-1"></div>
+                  <div className="w-full h-0.5 bg-gray-400 mb-1"></div>
+                  <div className="w-full h-0.5 bg-gray-300 mb-1"></div>
+                  <div className="w-full h-0.5 bg-gray-400"></div>
+                </div>
               </div>
               <h3 className="text-lg font-semibold text-foreground">Grafite</h3>
             </div>
@@ -120,8 +158,12 @@ export default function ElementoChimico() {
           {/* Diamante */}
           <Card className="p-6 space-y-4 bg-card border-border">
             <div className="text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-lg mx-auto mb-3 flex items-center justify-center">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-200 to-blue-400 rounded-full"></div>
+              <div className="w-16 h-16 bg-gradient-to-br from-blue-200 via-white to-blue-300 rounded-lg mx-auto mb-3 flex items-center justify-center relative border-2 border-blue-200">
+                {/* Rappresentazione cristallo diamante */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-blue-400 rotate-45 bg-gradient-to-br from-transparent via-blue-100 to-transparent"></div>
+                </div>
+                <div className="w-4 h-4 bg-white rounded-full border border-blue-300 z-10"></div>
               </div>
               <h3 className="text-lg font-semibold text-foreground">Diamante</h3>
             </div>
@@ -150,8 +192,16 @@ export default function ElementoChimico() {
           {/* Fullerene */}
           <Card className="p-6 space-y-4 bg-card border-border">
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                <Atom className="h-8 w-8 text-purple-600" />
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-200 to-purple-400 rounded-full mx-auto mb-3 flex items-center justify-center relative border-2 border-purple-300">
+                {/* Rappresentazione fullerene con pattern esagonale */}
+                <div className="absolute inset-2 border border-purple-600 rounded-full"></div>
+                <div className="absolute inset-3 border border-purple-500 rounded-full"></div>
+                <div className="w-2 h-2 bg-purple-700 rounded-full"></div>
+                {/* Punti esagonali */}
+                <div className="absolute top-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-600 rounded-full"></div>
+                <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-purple-600 rounded-full"></div>
+                <div className="absolute top-1/2 left-2 transform -translate-y-1/2 w-1 h-1 bg-purple-600 rounded-full"></div>
+                <div className="absolute top-1/2 right-2 transform -translate-y-1/2 w-1 h-1 bg-purple-600 rounded-full"></div>
               </div>
               <h3 className="text-lg font-semibold text-foreground">Fullerene</h3>
             </div>
