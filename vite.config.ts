@@ -32,6 +32,7 @@ export default defineConfig({
     outDir: "../dist", // Output alla radice per Vercel
     emptyOutDir: true,
   },
+  publicDir: path.resolve(import.meta.dirname, "public"),
   server: {
     fs: {
       strict: true,
