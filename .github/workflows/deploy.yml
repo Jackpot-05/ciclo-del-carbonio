@@ -36,7 +36,9 @@ jobs:
         env:
           VITE_AIRTABLE_API_KEY: ${{ secrets.VITE_AIRTABLE_API_KEY }}
           VITE_AIRTABLE_BASE_ID: ${{ secrets.VITE_AIRTABLE_BASE_ID }}
-          VITE_AIRTABLE_TABLE_NAME: ${{ secrets.VITE_AIRTABLE_TABLE_NAME }}
+          VITE_AIRTABLE_SESSIONS_TABLE: ${{ secrets.VITE_AIRTABLE_SESSIONS_TABLE }}
+          VITE_AIRTABLE_STUDENTS_TABLE: ${{ secrets.VITE_AIRTABLE_STUDENTS_TABLE }}
+          VITE_AIRTABLE_ANSWERS_TABLE: ${{ secrets.VITE_AIRTABLE_ANSWERS_TABLE }}
           
       - name: Setup Pages
         uses: actions/configure-pages@v4
