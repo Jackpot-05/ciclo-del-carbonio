@@ -10,13 +10,9 @@ import {
   XCircle, 
   Clock, 
   BarChart3, 
-  Download,
   RefreshCw,
   Eye,
-  TrendingUp,
-  Cloud,
-  Wifi,
-  WifiOff
+  TrendingUp
 } from "lucide-react";
 import {
   Table,
@@ -42,536 +38,287 @@ interface Student {
   score: number;
   isOnline: boolean;
   lastActivity: number;
+  device: string;
+  sessionCode: string;
 }
-
-interface QuizStats {
-  totalStudents: number;
-  activeStudents: number;
-  completedQuizzes: number;
-  averageScore: number;
-  questionStats: {
-    questionId: string;
-    question: string;
-    correctAnswers: number;
-    totalAnswers: number;
-    percentage: number;
-  }[];
-}
-
-// Dati mock per la demo
-const mockStudents: Student[] = [
-  {
-    id: "1",
-    name: "Marco Rossi",
-    answers: [
-      { questionId: "q1", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 120000 },
-      { questionId: "q2", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 90000 },
-      { questionId: "q3", selectedAnswer: 0, isCorrect: false, timestamp: Date.now() - 60000 },
-    ],
-    score: 2,
-    isOnline: true,
-    lastActivity: Date.now() - 30000
-  },
-  {
-    id: "2", 
-    name: "Sofia Bianchi",
-    answers: [
-      { questionId: "q1", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 100000 },
-      { questionId: "q2", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 70000 },
-      { questionId: "q3", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 40000 },
-      { questionId: "q4", selectedAnswer: 2, isCorrect: true, timestamp: Date.now() - 20000 },
-    ],
-    score: 4,
-    isOnline: true,
-    lastActivity: Date.now() - 10000
-  },
-  {
-    id: "3",
-    name: "Luca Verde",
-    answers: [
-      { questionId: "q1", selectedAnswer: 0, isCorrect: false, timestamp: Date.now() - 150000 },
-      { questionId: "q2", selectedAnswer: 2, isCorrect: false, timestamp: Date.now() - 120000 },
-    ],
-    score: 0,
-    isOnline: false,
-    lastActivity: Date.now() - 300000
-  },
-  {
-    id: "4",
-    name: "Emma Gialli",
-    answers: [
-      { questionId: "q1", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 80000 },
-      { questionId: "q2", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 50000 },
-      { questionId: "q3", selectedAnswer: 1, isCorrect: true, timestamp: Date.now() - 25000 },
-    ],
-    score: 3,
-    isOnline: true,
-    lastActivity: Date.now() - 5000
-  }
-];
-
-const questionTitles = [
-  "Principale serbatoio di carbonio negli oceani",
-  "Upwelling oceanico e carbonio",
-  "Pompa biologica del carbonio",
-  "Tempo di residenza del carbonio atmosferico",
-  "Causa dell'acidificazione degli oceani"
-];
 
 export default function QuizAdmin() {
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [stats, setStats] = useState<QuizStats | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [dataSource, setDataSource] = useState<'cloud' | 'api' | 'local' | 'mock'>('cloud');
+  const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [sessionCode, setSessionCode] = useState<string>('');
 
-  // Funzione per caricare dati dal cloud semplificato
-  const loadFromSimpleCloud = async (): Promise<Student[] | null> => {
-    try {
-      const cloudStudents = await simpleCloudStorage.loadAllStudents();
-      if (cloudStudents.length > 0) {
-        console.log('🔗 Caricati studenti dal storage semplificato:', cloudStudents.length);
-        setDataSource('cloud');
-        return cloudStudents;
-      }
-      return null;
-    } catch (error) {
-      console.warn('⚠️ Errore storage semplificato:', error);
-      return null;
-    }
+  // Genera nuovo codice sessione
+  const generateNewSession = () => {
+    const newCode = realTimeStorage.generateSessionCode();
+    realTimeStorage.setSessionCode(newCode);
+    setSessionCode(newCode);
+    setStudents([]); // Reset studenti per nuova sessione
+    console.log('🔄 Nuova sessione generata:', newCode);
   };
 
-  // Funzione per caricare dati dal cloud
-  const loadFromCloud = async (): Promise<Student[] | null> => {
-    try {
-      const cloudStudents = await cloudStorage.loadAllStudents();
-      if (cloudStudents.length > 0) {
-        console.log('☁️ Caricati studenti dal cloud:', cloudStudents.length);
-        return cloudStudents;
-      }
-      return null;
-    } catch (error) {
-      console.warn('⚠️ Errore caricamento cloud:', error);
-      return null;
-    }
-  };
-
-  // Funzione per caricare dati da localStorage
-  const loadFromLocalStorage = (): Student[] => {
-    try {
-      const students = JSON.parse(localStorage.getItem('quiz_students') || '[]');
-      console.log('📱 Caricati studenti da localStorage:', students.length);
-      return students;
-    } catch (error) {
-      console.error('❌ Errore lettura localStorage:', error);
-      return [];
-    }
-  };
-
-  // Funzione per caricare dati reali dal backend
-  const fetchStudentsData = async () => {
-    try {
-      const response = await fetch('/api/quiz/students');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ Dati studenti da API:', data.students?.length || 0);
-        return data.students || [];
-      } else {
-        console.warn('⚠️ API non disponibile, uso localStorage');
-        return null;
-      }
-    } catch (error) {
-      console.warn('⚠️ Errore API, uso localStorage:', error);
-      return null;
-    }
-  };
-
-  // Caricamento iniziale dati con priorità: Simple Cloud > Cloud > API > localStorage > mock
+  // Carica dati e avvia listening
   useEffect(() => {
-    const loadInitialData = async () => {
-      setIsLoading(true);
-      
-      // 1. Prova prima con Simple Cloud Storage (URL + localStorage)
-      const simpleCloudStudents = await loadFromSimpleCloud();
-      if (simpleCloudStudents && simpleCloudStudents.length > 0) {
-        setStudents(simpleCloudStudents);
-        setDataSource('cloud');
-        console.log('🔗 Usando dati dal storage semplificato');
-      } else {
-        // 2. Fallback: Cloud Storage originale
-        const cloudStudents = await loadFromCloud();
-        if (cloudStudents && cloudStudents.length > 0) {
-          setStudents(cloudStudents);
-          setDataSource('cloud');
-          console.log('☁️ Usando dati dal cloud storage');
-        } else {
-          // 3. Fallback: API backend
-          const apiStudents = await fetchStudentsData();
-          if (apiStudents !== null && apiStudents.length > 0) {
-            setStudents(apiStudents);
-            setDataSource('api');
-            console.log('🚀 Usando dati da API backend');
-          } else {
-            // 4. Fallback: localStorage
-            const localStudents = loadFromLocalStorage();
-            if (localStudents.length > 0) {
-              setStudents(localStudents);
-              setDataSource('local');
-              console.log('📱 Usando dati da localStorage');
-            } else {
-              // 5. Ultimo fallback: mock data per demo
-              setStudents(mockStudents);
-              setDataSource('mock');
-              console.log('📋 Usando mock data come demo');
-            }
-          }
-        }
-      }
-      
-      setIsLoading(false);
-      setLastUpdate(new Date().toLocaleTimeString());
-    };
+    setIsLoading(true);
     
-    loadInitialData();
+    // Ottieni codice sessione
+    setSessionCode(realTimeStorage.getSessionCode());
+    
+    // Carica dati iniziali
+    const initialStudents = realTimeStorage.loadAllStudents();
+    setStudents(initialStudents);
+    console.log('📊 Dashboard avviata con', initialStudents.length, 'studenti');
+    
+    // Configura listening real-time
+    const stopListening = realTimeStorage.listenToUpdates((updatedStudents) => {
+      console.log('🔄 Aggiornamento real-time:', updatedStudents.length, 'studenti');
+      setStudents(updatedStudents);
+      setLastUpdate(new Date().toLocaleTimeString());
+    });
+    
+    setIsLoading(false);
+    
+    // Cleanup
+    return () => {
+      stopListening();
+    };
   }, []);
 
-  // Aggiornamenti automatici (priorità: API > localStorage > mock)
-  useEffect(() => {
-    if (!autoRefresh) return;
-    
-    const interval = setInterval(async () => {
-      // Prova a caricare dati reali dal backend
-      const apiStudents = await fetchStudentsData();
-      
-      if (apiStudents !== null) {
-        setStudents(apiStudents);
-      } else {
-        // Fallback: ricarica da localStorage (potrebbero essere cambiati)
-        const localStudents = loadFromLocalStorage();
-        if (localStudents.length > 0) {
-          setStudents(localStudents);
-        } else if (students.length === 0) {
-          // Solo se non abbiamo nessun dato, usa mock
-          setStudents(mockStudents);
-        }
-      }
-      
-      setLastUpdate(new Date().toLocaleTimeString());
-    }, 2000); // Ogni 2 secondi
-    
-    return () => clearInterval(interval);
-  }, [autoRefresh, students.length]);
-
   // Calcola statistiche
-  useEffect(() => {
-    const totalStudents = students.length;
-    const activeStudents = students.filter(s => s.isOnline).length;
-    const completedQuizzes = students.filter(s => s.answers.length === 5).length;
-    const totalScores = students.reduce((sum, s) => sum + s.score, 0);
-    const averageScore = totalStudents > 0 ? totalScores / totalStudents : 0;
-    
-    // Statistiche per domanda
-    const questionStats = questionTitles.map((question, index) => {
-      const questionId = `q${index + 1}`;
-      const answers = students.flatMap(s => s.answers.filter(a => a.questionId === questionId));
-      const correctAnswers = answers.filter(a => a.isCorrect).length;
-      const totalAnswers = answers.length;
-      
-      return {
-        questionId,
-        question,
-        correctAnswers,
-        totalAnswers,
-        percentage: totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0
-      };
-    });
-    
-    setStats({
-      totalStudents,
-      activeStudents, 
-      completedQuizzes,
-      averageScore,
-      questionStats
-    });
-  }, [students]);
+  const stats = {
+    totalStudents: students.length,
+    activeStudents: students.filter(s => s.isOnline).length,
+    completedQuizzes: students.filter(s => s.answers.length >= 5).length,
+    averageScore: students.length > 0 
+      ? Math.round(students.reduce((sum, s) => sum + s.score, 0) / students.length) 
+      : 0
+  };
 
   const formatLastActivity = (timestamp: number) => {
     const diff = Date.now() - timestamp;
     const minutes = Math.floor(diff / 60000);
-    const seconds = Math.floor((diff % 60000) / 1000);
-    
-    if (minutes > 0) return `${minutes}m fa`;
-    return `${seconds}s fa`;
+    if (minutes < 1) return 'Ora';
+    if (minutes < 60) return `${minutes}m fa`;
+    return `${Math.floor(minutes / 60)}h fa`;
   };
 
-  const exportData = () => {
-    const csvData = students.map(student => ({
-      Nome: student.name,
-      ID: student.id,
-      Punteggio: student.score,
-      Risposte: student.answers.length,
-      Online: student.isOnline ? "Sì" : "No",
-      UltimaAttivita: new Date(student.lastActivity).toLocaleString()
-    }));
-    
-    console.log("Esportazione dati:", csvData);
-    // Qui implementeresti l'export CSV reale
+  const getDeviceIcon = (device: string) => {
+    return device === 'Mobile' ? '📱' : '💻';
   };
-
-  if (!stats) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
-        <div>
-          <h1 className="text-3xl font-heading font-bold text-foreground">
-            Dashboard Quiz Collaborativo
-          </h1>
-          <p className="text-muted-foreground">
-            Monitoraggio in tempo reale delle risposte degli studenti
-          </p>
-          {lastUpdate && (
-            <div className="text-xs text-muted-foreground mt-1">
-              Ultimo aggiornamento: {lastUpdate}
-            </div>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-teal-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <h1 className="text-4xl font-bold text-emerald-800">Quiz Live Dashboard</h1>
+          <p className="text-emerald-600">Monitoraggio real-time degli studenti</p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+            <Badge variant="outline" className="text-lg px-4 py-2">
+              <Clock className="w-4 h-4 mr-2" />
+              Codice Sessione: {sessionCode}
+            </Badge>
+            <Button 
+              onClick={generateNewSession}
+              variant="outline"
+              className="px-4 py-2"
+            >
+              Genera Nuovo Codice
+            </Button>
+          </div>
+          <div className="text-sm text-emerald-600 max-w-md mx-auto">
+            Gli studenti devono inserire il codice <strong>{sessionCode}</strong> per unirsi al quiz
+          </div>
         </div>
-        
-        <div className="flex space-x-2">
-          <Button
-            variant={autoRefresh ? "default" : "outline"}
-            size="sm"
-            onClick={() => setAutoRefresh(!autoRefresh)}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${autoRefresh ? "animate-spin" : ""}`} />
-            Auto-refresh
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportData}>
-            <Download className="h-4 w-4 mr-2" />
-            Esporta
-          </Button>
-        </div>
-      </div>
 
-      {/* Statistiche generali */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <Users className="h-8 w-8 text-primary" />
-            <div>
-              <div className="text-2xl font-bold text-foreground">{stats.totalStudents}</div>
-              <div className="text-sm text-muted-foreground">Studenti totali</div>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-            <div>
-              <div className="text-2xl font-bold text-foreground">{stats.activeStudents}</div>
-              <div className="text-sm text-muted-foreground">Online ora</div>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <CheckCircle className="h-8 w-8 text-green-600" />
-            <div>
-              <div className="text-2xl font-bold text-foreground">{stats.completedQuizzes}</div>
-              <div className="text-sm text-muted-foreground">Quiz completati</div>
-            </div>
-          </div>
-        </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center space-x-3">
-            <TrendingUp className="h-8 w-8 text-yellow-600" />
-            <div>
-              <div className="text-2xl font-bold text-foreground">{stats.averageScore.toFixed(1)}</div>
-              <div className="text-sm text-muted-foreground">Media punteggio</div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Statistiche per domanda */}
-      <Card className="p-6">
-        <h2 className="text-xl font-heading font-semibold mb-4 flex items-center">
-          <BarChart3 className="h-5 w-5 mr-2" />
-          Analisi per Domanda
-        </h2>
-        
-        <div className="space-y-4">
-          {stats.questionStats.map((stat, index) => (
-            <div key={stat.questionId} className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-sm font-medium text-foreground">
-                  Q{index + 1}: {stat.question}
-                </span>
-                <Badge variant={stat.percentage >= 70 ? "default" : stat.percentage >= 50 ? "secondary" : "destructive"}>
-                  {stat.percentage}%
-                </Badge>
-              </div>
-              
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className={`h-2 rounded-full transition-all duration-500 ${
-                    stat.percentage >= 70 ? "bg-green-500" :
-                    stat.percentage >= 50 ? "bg-yellow-500" : "bg-red-500"
-                  }`}
-                  style={{ width: `${stat.percentage}%` }}
-                />
-              </div>
-              
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>{stat.correctAnswers} corrette su {stat.totalAnswers} risposte</span>
+        {/* Statistiche */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="p-6 bg-white/80 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <Users className="w-8 h-8 text-emerald-600" />
+              <div>
+                <p className="text-2xl font-bold text-emerald-800">{stats.totalStudents}</p>
+                <p className="text-sm text-gray-600">Studenti Totali</p>
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Lista studenti */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h2 className="text-xl font-heading font-semibold mb-4">
-            Studenti Attivi
-          </h2>
+          </Card>
           
-          <ScrollArea className="h-96">
-            <div className="space-y-3">
-              {students.map((student) => (
-                <div
-                  key={student.id}
-                  className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
-                    selectedStudent?.id === student.id ? "bg-primary/10 border-primary" : "bg-card border-border"
-                  }`}
-                  onClick={() => setSelectedStudent(student)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-3 h-3 rounded-full ${student.isOnline ? "bg-green-500" : "bg-gray-400"}`} />
-                      <div>
-                        <div className="font-medium text-foreground">{student.name}</div>
-                        <div className="text-xs text-muted-foreground">ID: {student.id.slice(-6)}</div>
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-sm font-bold text-foreground">
-                        {student.score}/{student.answers.length}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatLastActivity(student.lastActivity)}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-2 flex space-x-1">
-                    {[1, 2, 3, 4, 5].map((qNum) => {
-                      const answer = student.answers.find(a => a.questionId === `q${qNum}`);
-                      if (!answer) {
-                        return <div key={qNum} className="w-4 h-4 bg-gray-200 rounded" />;
-                      }
-                      return (
-                        <div
-                          key={qNum}
-                          className={`w-4 h-4 rounded ${
-                            answer.isCorrect ? "bg-green-500" : "bg-red-500"
-                          }`}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+          <Card className="p-6 bg-white/80 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-600">{stats.activeStudents}</p>
+                <p className="text-sm text-gray-600">Online Ora</p>
+              </div>
             </div>
-          </ScrollArea>
-        </Card>
-
-        {/* Dettagli studente selezionato */}
-        <Card className="p-6">
-          <h2 className="text-xl font-heading font-semibold mb-4">
-            Dettagli Studente
-          </h2>
+          </Card>
           
-          {selectedStudent ? (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className={`w-4 h-4 rounded-full ${selectedStudent.isOnline ? "bg-green-500" : "bg-gray-400"}`} />
-                <div>
-                  <div className="font-semibold text-foreground">{selectedStudent.name}</div>
-                  <div className="text-sm text-muted-foreground">ID: {selectedStudent.id}</div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
-                <div>
-                  <div className="text-sm text-muted-foreground">Punteggio</div>
-                  <div className="text-xl font-bold text-foreground">
-                    {selectedStudent.score}/{selectedStudent.answers.length}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-sm text-muted-foreground">Percentuale</div>
-                  <div className="text-xl font-bold text-foreground">
-                    {selectedStudent.answers.length > 0 
-                      ? Math.round((selectedStudent.score / selectedStudent.answers.length) * 100) 
-                      : 0}%
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                <h3 className="font-medium text-foreground">Risposte</h3>
-                {selectedStudent.answers.map((answer, index) => (
-                  <div key={answer.questionId} className="flex items-center space-x-3 p-2 rounded bg-card">
-                    <span className="text-sm font-medium text-muted-foreground">Q{index + 1}</span>
-                    {answer.isCorrect ? (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    ) : (
-                      <XCircle className="h-4 w-4 text-red-500" />
-                    )}
-                    <span className="text-sm text-foreground">
-                      Risposta {String.fromCharCode(65 + answer.selectedAnswer)}
-                    </span>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {new Date(answer.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                ))}
+          <Card className="p-6 bg-white/80 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-8 h-8 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold text-blue-800">{stats.completedQuizzes}</p>
+                <p className="text-sm text-gray-600">Quiz Completati</p>
               </div>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <Eye className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-muted-foreground">
-                Seleziona uno studente per vedere i dettagli
-              </p>
+          </Card>
+          
+          <Card className="p-6 bg-white/80 backdrop-blur">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="w-8 h-8 text-purple-600" />
+              <div>
+                <p className="text-2xl font-bold text-purple-800">{stats.averageScore}/5</p>
+                <p className="text-sm text-gray-600">Punteggio Medio</p>
+              </div>
             </div>
-          )}
-        </Card>
-      </div>
-      
-      {autoRefresh && (
-        <Alert>
-          <Clock className="h-4 w-4" />
-          <AlertDescription>
-            La dashboard si aggiorna automaticamente ogni 3 secondi per mostrare le nuove risposte in tempo reale.
+          </Card>
+        </div>
+
+        {/* Status */}
+        <Alert className="bg-emerald-50 border-emerald-200">
+          <RefreshCw className="w-4 h-4 text-emerald-600" />
+          <AlertDescription className="text-emerald-700">
+            Aggiornamento automatico attivo - Ultimo: {lastUpdate || 'In corso...'}
           </AlertDescription>
         </Alert>
-      )}
+
+        {/* Lista Studenti */}
+        <Card className="bg-white/90 backdrop-blur">
+          <div className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-emerald-800">Studenti Attivi</h2>
+              <Badge variant="secondary">
+                {students.length} studenti
+              </Badge>
+            </div>
+            
+            <ScrollArea className="h-96">
+              {students.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Users className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <p>Nessuno studente connesso</p>
+                  <p className="text-sm">Gli studenti appariranno qui appena iniziano il quiz</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Device</TableHead>
+                      <TableHead>Progresso</TableHead>
+                      <TableHead>Punteggio</TableHead>
+                      <TableHead>Ultima Attività</TableHead>
+                      <TableHead>Stato</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {students.map((student) => (
+                      <TableRow 
+                        key={student.id}
+                        className="cursor-pointer hover:bg-emerald-50"
+                        onClick={() => setSelectedStudent(student)}
+                      >
+                        <TableCell className="font-medium">
+                          {student.name}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-lg">{getDeviceIcon(student.device)}</span>
+                          <span className="ml-2 text-sm text-gray-600">{student.device}</span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-emerald-600 h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${(student.answers.length / 5) * 100}%` }}
+                              ></div>
+                            </div>
+                            <span className="text-sm text-gray-600">
+                              {student.answers.length}/5
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={student.score >= 3 ? "default" : "secondary"}>
+                            {student.score}/5
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {formatLastActivity(student.lastActivity)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={student.isOnline ? "default" : "secondary"}
+                            className={student.isOnline ? "bg-green-500" : ""}
+                          >
+                            {student.isOnline ? "Online" : "Offline"}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </ScrollArea>
+          </div>
+        </Card>
+
+        {/* Dettagli Studente */}
+        {selectedStudent && (
+          <Card className="bg-white/90 backdrop-blur">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-emerald-800">
+                  Dettagli: {selectedStudent.name}
+                </h3>
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedStudent(null)}
+                >
+                  Chiudi
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p><strong>Device:</strong> {selectedStudent.device}</p>
+                  <p><strong>Punteggio:</strong> {selectedStudent.score}/5</p>
+                  <p><strong>Risposte:</strong> {selectedStudent.answers.length}/5</p>
+                  <p><strong>Stato:</strong> 
+                    <Badge className="ml-2" variant={selectedStudent.isOnline ? "default" : "secondary"}>
+                      {selectedStudent.isOnline ? "Online" : "Offline"}
+                    </Badge>
+                  </p>
+                </div>
+                
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Ultime Risposte:</h4>
+                  {selectedStudent.answers.length === 0 ? (
+                    <p className="text-gray-500">Nessuna risposta ancora</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {selectedStudent.answers.slice(-3).map((answer, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          {answer.isCorrect ? 
+                            <CheckCircle className="w-4 h-4 text-green-500" /> : 
+                            <XCircle className="w-4 h-4 text-red-500" />
+                          }
+                          <span className="text-sm">
+                            Q{answer.questionId} - {answer.isCorrect ? 'Corretta' : 'Sbagliata'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

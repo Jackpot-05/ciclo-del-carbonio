@@ -110,6 +110,7 @@ export default function QuizCollaborativo() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [isRegistered, setIsRegistered] = useState(false);
   const [name, setName] = useState("");
+  const [sessionCodeInput, setSessionCodeInput] = useState("");
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -131,9 +132,20 @@ export default function QuizCollaborativo() {
   }, []);
 
   const handleRegistration = async () => {
-    if (!name.trim()) return;
+    if (!name.trim() || !sessionCodeInput.trim()) {
+      alert('Inserisci nome e codice sessione');
+      return;
+    }
     
     setIsSubmitting(true);
+
+    // Controlla se il codice sessione esiste o unisciti alla sessione
+    const success = realTimeStorage.joinSession(sessionCodeInput);
+    if (!success) {
+      alert('Errore nell\'unirsi alla sessione');
+      setIsSubmitting(false);
+      return;
+    }
     
     const newStudent: Student = {
       id: `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -145,13 +157,13 @@ export default function QuizCollaborativo() {
     
     try {
       // Usa sistema real-time per sincronizzazione immediata
-      const success = realTimeStorage.saveStudent({
+      const saveSuccess = realTimeStorage.saveStudent({
         ...newStudent,
         lastActivity: Date.now(),
         device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
       });
       
-      if (success) {
+      if (saveSuccess) {
         console.log('🔥 Studente salvato automaticamente - visibile al prof!');
         setClassCode(realTimeStorage.getSessionCode());
       }
@@ -284,14 +296,26 @@ export default function QuizCollaborativo() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Inserisci il tuo nome"
                 className="mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground">Codice Sessione</label>
+              <Input
+                value={sessionCodeInput}
+                onChange={(e) => setSessionCodeInput(e.target.value.toUpperCase())}
+                placeholder="Es: ABC123"
+                className="mt-1"
                 onKeyPress={(e) => e.key === 'Enter' && handleRegistration()}
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Chiedi il codice al tuo professore
+              </p>
             </div>
           </div>
           
           <Button
             onClick={handleRegistration}
-            disabled={!name.trim() || isSubmitting}
+            disabled={!name.trim() || !sessionCodeInput.trim() || isSubmitting}
             className="w-full"
           >
             {isSubmitting ? "Registrazione..." : "Partecipa al Quiz"}
