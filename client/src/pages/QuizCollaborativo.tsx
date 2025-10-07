@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Users, Clock, HelpCircle } from "lucide-react";
 import { airtableStorage } from "@/lib/airtableStorage";
+import { realTimeStorage } from "@/lib/realTimeStorage";
 import {
   Tooltip,
   TooltipContent,
@@ -141,7 +142,13 @@ export default function QuizCollaborativo() {
 
     try {
       // Controlla se la sessione esiste
-      const sessionExists = await airtableStorage.sessionExists(sessionCodeInput);
+      let sessionExists = await airtableStorage.sessionExists(sessionCodeInput);
+      // Se Airtable è off, crea al volo una sessione locale per permettere la classe
+      if (!sessionExists && !airtableStorage.isEnabled()) {
+        await airtableStorage.createSession(sessionCodeInput, 'Professor');
+        realTimeStorage.setSessionCode(sessionCodeInput);
+        sessionExists = true;
+      }
       if (!sessionExists) {
         alert('Codice sessione non valido! Controlla con il professore.');
         setIsSubmitting(false);

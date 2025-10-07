@@ -1,4 +1,6 @@
 // Sistema Airtable per Quiz Collaborativo
+import { realTimeStorage } from "@/lib/realTimeStorage";
+
 export class AirtableQuizStorage {
   private baseId = 'your_base_id'; // Da configurare
   private apiKey = 'your_api_key'; // Da configurare  
@@ -58,6 +60,11 @@ export class AirtableQuizStorage {
     } catch {}
   }
 
+  // Stato attuale: Airtable abilitato?
+  isEnabled(): boolean {
+    return this.enabled;
+  }
+
   // Escape sicuro per valori in formula Airtable (gestisce apostrofi)
   private esc(val: string): string {
     try {
@@ -110,6 +117,10 @@ export class AirtableQuizStorage {
         students: {}
       };
       localStorage.setItem(`session_${sessionCode}`, JSON.stringify(session));
+      // Allinea anche il canale real-time locale (dashboard)
+      try {
+        realTimeStorage.setSessionCode(sessionCode);
+      } catch {}
       return { success: true, sessionId: `local_${sessionCode}` };
     }
 
@@ -171,6 +182,18 @@ export class AirtableQuizStorage {
         lastActive: Date.now()
       };
       localStorage.setItem(sessionKey, JSON.stringify(session));
+      // Aggiorna anche il canale real-time usato dalla dashboard
+      try {
+        realTimeStorage.joinSession(sessionCode);
+        realTimeStorage.saveStudent({
+          id: studentId,
+          name: studentName,
+          answers: [],
+          score: 0,
+          isOnline: true,
+          device: 'Web'
+        } as any);
+      } catch {}
       return { success: true, studentId, airtableId: `local_${studentId}` };
     }
 
@@ -248,7 +271,30 @@ export class AirtableQuizStorage {
         session.students[studentId].completed = Object.keys(answers).length >= 5;
         session.students[studentId].lastActive = Date.now();
         localStorage.setItem(sessionKey, JSON.stringify(session));
-        window.dispatchEvent(new CustomEvent('quizUpdate', { detail: { sessionCode, studentId, questionIndex, score } }));
+        // Eventi compatibili per altri tab/dashboard
+        try {
+          window.dispatchEvent(new CustomEvent('quizUpdate', { detail: { sessionCode, studentId, questionIndex, score } }));
+          window.dispatchEvent(new CustomEvent('quiz-update', { detail: { sessionCode, studentId, questionIndex, score } }));
+        } catch {}
+        // Aggiorna canale real-time per la dashboard locale
+        try {
+          const st = session.students[studentId];
+          const compactAnswers = Object.entries(st.answers || {}).map(([q, a]: [string, any]) => ({
+            questionId: `q${parseInt(q) + 1}`,
+            selectedAnswer: (a as any).answer,
+            isCorrect: (a as any).isCorrect,
+            timestamp: (a as any).timestamp
+          }));
+          realTimeStorage.joinSession(sessionCode);
+          realTimeStorage.saveStudent({
+            id: studentId,
+            name: st.name || 'Studente',
+            answers: compactAnswers,
+            score: st.score || 0,
+            isOnline: true,
+            device: 'Web'
+          } as any);
+        } catch {}
       }
       return true;
     }
@@ -303,10 +349,30 @@ export class AirtableQuizStorage {
         
         localStorage.setItem(sessionKey, JSON.stringify(session));
         
-        // Notifica altri tab
-        window.dispatchEvent(new CustomEvent('quizUpdate', { 
-          detail: { sessionCode, studentId, questionIndex, score } 
-        }));
+        // Notifica altri tab (compatibilità nomi eventi)
+        try {
+          window.dispatchEvent(new CustomEvent('quizUpdate', { detail: { sessionCode, studentId, questionIndex, score } }));
+          window.dispatchEvent(new CustomEvent('quiz-update', { detail: { sessionCode, studentId, questionIndex, score } }));
+        } catch {}
+        // Aggiorna la dashboard locale tramite realTimeStorage
+        try {
+          const st = session.students[studentId];
+          const compactAnswers = Object.entries(st.answers || {}).map(([q, a]: [string, any]) => ({
+            questionId: `q${parseInt(q) + 1}`,
+            selectedAnswer: (a as any).answer,
+            isCorrect: (a as any).isCorrect,
+            timestamp: (a as any).timestamp
+          }));
+          realTimeStorage.joinSession(sessionCode);
+          realTimeStorage.saveStudent({
+            id: studentId,
+            name: st.name || 'Studente',
+            answers: compactAnswers,
+            score: st.score || 0,
+            isOnline: true,
+            device: 'Web'
+          } as any);
+        } catch {}
       }
       
       return true;
@@ -481,9 +547,29 @@ export class AirtableQuizStorage {
   // Controlla se sessione esiste
   async sessionExists(sessionCode: string): Promise<boolean> {
     if (!this.enabled) {
-      // Fallback localStorage
+      // Fallback locale: accetta sessione se presente in modello real-time o in storage locale
       const sessionKey = `session_${sessionCode}`;
-      return localStorage.getItem(sessionKey) !== null;
+      const hasLocal = localStorage.getItem(sessionKey) !== null;
+      const hasRT = (() => {
+        try {
+          return realTimeStorage.sessionExists(sessionCode) || realTimeStorage.getSessionCode() === sessionCode.toUpperCase();
+        } catch {
+          return false;
+        }
+      })();
+      if (!hasLocal && hasRT) {
+        // Crea placeholder per compatibilità
+        try {
+          localStorage.setItem(sessionKey, JSON.stringify({
+            code: sessionCode,
+            professor: 'Local',
+            createdAt: Date.now(),
+            active: true,
+            students: {}
+          }));
+        } catch {}
+      }
+      return hasLocal || hasRT;
     }
     try {
       const formula = this.encFormula(`AND({Session Code}='${this.esc(sessionCode)}',{Active}=TRUE())`);

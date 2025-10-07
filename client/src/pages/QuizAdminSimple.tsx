@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { realTimeStorage } from "@/lib/realTimeStorage";
+import { airtableStorage } from "@/lib/airtableStorage";
 import { 
   Users, 
   CheckCircle, 
@@ -52,28 +53,46 @@ export default function QuizAdminSimple() {
   // Carica dati e avvia listening
   useEffect(() => {
     setIsLoading(true);
-    
-    // Ottieni codice sessione
-    setSessionCode(realTimeStorage.getSessionCode());
-    
-    // Carica dati iniziali
-    const initialStudents = realTimeStorage.loadAllStudents();
-    setStudents(initialStudents);
-    console.log('📊 Dashboard avviata con', initialStudents.length, 'studenti');
-    
-    // Configura listening real-time
-    const stopListening = realTimeStorage.listenToUpdates((updatedStudents) => {
-      console.log('🔄 Aggiornamento real-time:', updatedStudents.length, 'studenti');
-      setStudents(updatedStudents);
-      setLastUpdate(new Date().toLocaleTimeString());
-    });
-    
-    setIsLoading(false);
-    
-    // Cleanup
-    return () => {
-      stopListening();
-    };
+    const useAirtable = airtableStorage.isEnabled();
+
+    if (useAirtable) {
+      setSessionCode(realTimeStorage.getSessionCode());
+      let cancelled = false;
+      const fetchFromAirtable = async () => {
+        try {
+          const code = realTimeStorage.getSessionCode();
+          const data = await airtableStorage.getSessionData(code);
+          if (!cancelled) {
+            setStudents(data.students as any);
+            setLastUpdate(new Date().toLocaleTimeString());
+          }
+        } catch (e) {
+          // Silenzioso: la UI resta con dati ultimi noti
+        }
+      };
+      fetchFromAirtable();
+      const interval = setInterval(fetchFromAirtable, 3000);
+      setIsLoading(false);
+      return () => {
+        cancelled = true;
+        clearInterval(interval);
+      };
+    } else {
+      // Fallback locale via realTimeStorage
+      setSessionCode(realTimeStorage.getSessionCode());
+      const initialStudents = realTimeStorage.loadAllStudents();
+      setStudents(initialStudents);
+      console.log('📊 Dashboard avviata con', initialStudents.length, 'studenti');
+      const stopListening = realTimeStorage.listenToUpdates((updatedStudents) => {
+        console.log('🔄 Aggiornamento real-time:', updatedStudents.length, 'studenti');
+        setStudents(updatedStudents);
+        setLastUpdate(new Date().toLocaleTimeString());
+      });
+      setIsLoading(false);
+      return () => {
+        stopListening();
+      };
+    }
   }, []);
 
   // Calcola statistiche
