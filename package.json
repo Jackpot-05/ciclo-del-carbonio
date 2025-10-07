@@ -8,6 +8,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "start": "vite preview --port 4173",
+    "mock:api": "ts-node server/mock-api.ts",
+    "serve:dist": "vite preview --port 4173 --strictPort",
     "check": "tsc",
     "db:push": "drizzle-kit push"
   },

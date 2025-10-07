@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌍 Ciclo del Carbonio - Sito Educativo Interattivo</title>
+    
+    <!-- Cache Busting -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <!-- SEO Meta Tags -->
+    <meta name="description" content="Sito educativo interattivo sul ciclo del carbonio con quiz collaborativo in tempo reale per studenti e insegnanti">
+    <meta name="keywords" content="ciclo carbonio, educazione, quiz, chimica, ambiente, sostenibilità">
+    <meta name="author" content="Progetto Educativo Carbonio">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS via CDN per semplicità -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #06b6d4;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.8s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- React App Container -->
+    <div id="root"></div>
+    
+    <!-- Fallback Content se React non carica -->
+    <div id="fallback-content" style="display: none;" class="min-h-screen flex items-center justify-center p-6">
+        <div class="glass-card max-w-4xl w-full p-8 text-white">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold mb-4 animate-float">🌍 Ciclo del Carbonio</h1>
+                <p class="text-xl opacity-90">Sito Educativo Interattivo</p>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+                <div class="glass-card p-6 fade-in">
+                    <h2 class="text-2xl font-semibold mb-4">📚 Contenuti Educativi</h2>
+                    <ul class="space-y-2 text-white/80">
+                        <li>🔬 Il Ciclo del Carbonio Spiegato</li>
+                        <li>⚛️ L'Elemento Chimico Carbonio</li>
+                        <li>🏛️ Educazione Civica Ambientale</li>
+                        <li>📖 Lettere e Scienza</li>
+                        <li>👥 Cittadino Consapevole</li>
+                        <li>📊 Infografiche Interattive</li>
+                    </ul>
+                </div>
+                
+                <div class="glass-card p-6 fade-in">
+                    <h2 class="text-2xl font-semibold mb-4">🎯 Quiz Collaborativo</h2>
+                    <ul class="space-y-2 text-white/80">
+                        <li>👨‍🏫 Dashboard per Insegnanti</li>
+                        <li>👩‍🎓 Quiz per Studenti</li>
+                        <li>🔗 Sincronizzazione in Tempo Reale</li>
+                        <li>📱 Supporto Multi-dispositivo</li>
+                        <li>📊 Monitoraggio Risultati</li>
+                        <li>☁️ Backend Airtable</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="text-center">
+                <div class="mb-6">
+                    <h3 class="text-xl font-semibold mb-3">🚀 Come Iniziare</h3>
+                    <div class="grid sm:grid-cols-2 gap-4">
+                        <div class="glass-card p-4">
+                            <h4 class="font-semibold text-green-200">Per Insegnanti</h4>
+                            <p class="text-sm text-white/70 mt-2">Crea sessioni quiz e monitora le risposte degli studenti in tempo reale</p>
+                        </div>
+                        <div class="glass-card p-4">
+                            <h4 class="font-semibold text-blue-200">Per Studenti</h4>
+                            <p class="text-sm text-white/70 mt-2">Partecipa ai quiz collaborativi usando il codice sessione fornito</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button onclick="loadReactApp()" class="bg-white/20 hover:bg-white/30 text-white px-6 py-3 rounded-full font-semibold transition-all duration-300 transform hover:scale-105">
+                    🔄 Ricarica App React
+                </button>
+            </div>
+            
+            <div class="mt-8 text-center text-white/60 text-sm">
+                <p>📍 Versione Fallback - Il sito sta caricando l'applicazione React completa</p>
+                <p class="mt-2">Se persistono problemi, controlla la console per dettagli tecnici</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script per React e gestione caricamento -->
+    <script type="module">
+        // Verifica se esiste la build di produzione
+        async function loadReactApp() {
+            try {
+                // Prova a caricare i file di build
+                const assetsPath = './assets/';
+                const response = await fetch('./assets/index.js');
+                
+                if (response.ok) {
+                    // File di build esistenti, carica React app
+                    const script = document.createElement('script');
+                    script.type = 'module';
+                    script.src = './assets/index.js';
+                    document.head.appendChild(script);
+                    
+                    const cssLink = document.createElement('link');
+                    cssLink.rel = 'stylesheet';
+                    cssLink.href = './assets/index.css';
+                    document.head.appendChild(cssLink);
+                    
+                    // Nascondi fallback dopo 2 secondi
+                    setTimeout(() => {
+                        document.getElementById('fallback-content').style.display = 'none';
+                    }, 2000);
+                } else {
+                    throw new Error('Build files not found');
+                }
+            } catch (error) {
+                console.log('🔄 Fallback mode: Build non disponibile, mostra contenuto statico');
+                showFallbackContent();
+            }
+        }
+        
+        function showFallbackContent() {
+            document.getElementById('fallback-content').style.display = 'flex';
+            document.getElementById('root').style.display = 'none';
+        }
+        
+        // Auto-caricamento iniziale
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const root = document.getElementById('root');
+                if (!root.innerHTML.trim()) {
+                    console.log('React app non caricata, mostro fallback');
+                    showFallbackContent();
+                }
+            }, 3000);
+        });
+        
+        // Prova il caricamento iniziale
+        loadReactApp();
+    </script>
+    
+    <!-- Script di utilità -->
+    <script>
+        // Gestione errori globali
+        window.addEventListener('error', (e) => {
+            console.log('Errore caricamento:', e.message);
+        });
+        
+        // Informazioni di debug
+        console.log(`
+🌍 CICLO DEL CARBONIO - DEBUG INFO
+================================
+📅 Timestamp: ${new Date().toLocaleString()}
+🔗 URL: ${window.location.href}
+👤 User Agent: ${navigator.userAgent}
+🌐 Online: ${navigator.onLine}
+📱 Mobile: ${/Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)}
+
+🔧 TROUBLESHOOTING:
+- Se vedi questa pagina, il sito base è caricato ✅
+- Se React non carica, controlla la console del browser
+- GitHub Pages potrebbe richiedere alcuni minuti per aggiornare
+- Cache browser: prova Ctrl+F5 per refresh completo
+        `);
+    </script>
+</body>
+</html>
