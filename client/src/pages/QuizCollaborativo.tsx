@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Users, Clock, HelpCircle } from "lucide-react";
 import { cloudStorage } from "@/lib/cloudStorage";
 import { simpleCloudStorage } from "@/lib/simpleCloudStorage";
+import { autoSyncStorage } from "@/lib/autoSyncStorage";
 import {
   Tooltip,
   TooltipContent,
@@ -116,7 +117,7 @@ export default function QuizCollaborativo() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [connectedStudents, setConnectedStudents] = useState<number>(1);
-  const [shareUrl, setShareUrl] = useState<string>("");
+  const [classCode, setClassCode] = useState<string>("");
 
   const currentQuestion = collaborativeQuestions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === collaborativeQuestions.length - 1;
@@ -145,18 +146,16 @@ export default function QuizCollaborativo() {
     };
     
     try {
-      // Usa storage semplificato e affidabile
-      const result = await simpleCloudStorage.saveStudent({
+      // Usa sistema auto-sync per sincronizzazione automatica
+      const success = await autoSyncStorage.saveStudent({
         ...newStudent,
         lastActivity: Date.now(),
-        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
-        timestamp: Date.now()
+        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
       });
       
-      if (result.success && result.shareUrl) {
-        setShareUrl(result.shareUrl);
-        console.log('✅ Studente salvato con URL condivisibile');
-        console.log('🔗 Condividi questo link per vedere i risultati:', result.shareUrl);
+      if (success) {
+        console.log('🔥 Studente salvato automaticamente - visibile al prof!');
+        setClassCode(autoSyncStorage.getCurrentClassCode());
       }
       
       setStudent(newStudent);
@@ -209,17 +208,13 @@ export default function QuizCollaborativo() {
     setStudent(updatedStudent);
     
     try {
-      // Salva aggiornamento con storage semplificato
-      const result = await simpleCloudStorage.saveStudent({
+      // Salva aggiornamento con auto-sync
+      await autoSyncStorage.saveStudent({
         ...updatedStudent,
-        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop',
-        timestamp: Date.now()
+        device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
       });
       
-      if (result.success && result.shareUrl) {
-        setShareUrl(result.shareUrl);
-        console.log('✅ Risposta salvata con URL aggiornato');
-      }
+      console.log('🔥 Risposta salvata automaticamente');
       
     } catch (error) {
       console.warn('⚠️ Errore salvataggio risposta');
@@ -250,10 +245,8 @@ export default function QuizCollaborativo() {
   };
 
   const copyShareUrl = () => {
-    if (shareUrl) {
-      navigator.clipboard.writeText(shareUrl);
-      alert('Link copiato! Condividi questo link per far vedere i tuoi risultati al professore.');
-    }
+    // Funzione non più utilizzata con il sistema automatico
+    alert('I tuoi risultati sono già visibili automaticamente al professore!');
   };
 
   const resetQuiz = () => {
