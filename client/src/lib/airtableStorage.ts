@@ -7,6 +7,7 @@ export class AirtableQuizStorage {
   private tableSessions = 'Sessions';
   private tableStudents = 'Students';
   private tableAnswers = 'Answers';
+  private forceDisabled = false;
 
   constructor() {
     // Leggi env Vite lato client
@@ -21,6 +22,9 @@ export class AirtableQuizStorage {
         this.tableSessions;
       this.tableStudents = viteEnv.VITE_AIRTABLE_STUDENTS_TABLE || this.tableStudents;
       this.tableAnswers = viteEnv.VITE_AIRTABLE_ANSWERS_TABLE || this.tableAnswers;
+      // Flag per forzare il disable da env
+      const f = (viteEnv.VITE_AIRTABLE_FORCE_DISABLED || '').toString().toLowerCase();
+      this.forceDisabled = f === '1' || f === 'true';
     }
 
     // Fallback: leggi da localStorage (SOLO sviluppo/override manuale)
@@ -31,10 +35,18 @@ export class AirtableQuizStorage {
       }
     } catch (_) {}
 
-    // Abilita Airtable solo se configurazione valida
+    // Forza il disable per la sessione (se precedentemente fallita l'autenticazione)
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        const s = sessionStorage.getItem('airtable_force_disabled');
+        if (s === '1') this.forceDisabled = true;
+      }
+    } catch {}
+
+    // Abilita Airtable solo se configurazione valida e non forzata a OFF
     const looksLikeBase = /^app[\w]+$/.test(this.baseId);
     const looksLikePat = !/^VITE_/i.test(this.apiKey) && !/^your_/i.test(this.apiKey) && this.apiKey.length > 8;
-    this.enabled = looksLikeBase && looksLikePat;
+    this.enabled = looksLikeBase && looksLikePat && !this.forceDisabled;
     this.baseUrl = `https://api.airtable.com/v0/${this.baseId}`;
 
     // Log diagnostico leggero (non stampa la chiave)
@@ -44,6 +56,20 @@ export class AirtableQuizStorage {
         console.info(`Airtable tables → Sessions: ${this.tableSessions}, Students: ${this.tableStudents}, Answers: ${this.tableAnswers}`);
       }
     } catch {}
+  }
+
+  private handleAuthError(status: number) {
+    if (status === 401 || status === 403) {
+      this.enabled = false;
+      try {
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.setItem('airtable_force_disabled', '1');
+        }
+      } catch {}
+      try {
+        console.warn(`Airtable disabilitato per questa sessione (HTTP ${status}). Passo al fallback locale. Verifica PAT scopes (data.records:read/write), accesso alla Base e Allowed Origins.`);
+      } catch {}
+    }
   }
 
   private getHeaders() {
@@ -89,6 +115,7 @@ export class AirtableQuizStorage {
       });
 
       if (!response.ok) {
+        this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -158,6 +185,7 @@ export class AirtableQuizStorage {
       });
 
       if (!response.ok) {
+        this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -228,6 +256,7 @@ export class AirtableQuizStorage {
       });
 
       if (!response.ok) {
+        this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -310,6 +339,8 @@ export class AirtableQuizStorage {
             });
           }
         }
+      } else {
+        this.handleAuthError(answersResponse.status);
       }
     } catch (error) {
       console.warn('Errore aggiornamento punteggio:', error);
@@ -351,6 +382,7 @@ export class AirtableQuizStorage {
       );
 
       if (!studentsResponse.ok) {
+        this.handleAuthError(studentsResponse.status);
         throw new Error('Failed to fetch students');
       }
 
@@ -365,6 +397,8 @@ export class AirtableQuizStorage {
       let answersData = { records: [] };
       if (answersResponse.ok) {
         answersData = await answersResponse.json();
+      } else {
+        this.handleAuthError(answersResponse.status);
       }
 
       // Trasforma dati per compatibilità
@@ -441,6 +475,7 @@ export class AirtableQuizStorage {
         const data = await response.json();
         return data.records.length > 0;
       }
+      this.handleAuthError(response.status);
       return false;
     } catch (error) {
       console.warn('⚠️ Errore verifica sessione, usando localStorage:', error);
@@ -485,6 +520,8 @@ export class AirtableQuizStorage {
             })
           });
         }
+      } else {
+        this.handleAuthError(studentResponse.status);
       }
     } catch (error) {
       // Fallback localStorage

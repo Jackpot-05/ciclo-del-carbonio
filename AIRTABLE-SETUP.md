@@ -146,6 +146,14 @@ Access to fetch at 'https://api.airtable.com' blocked by CORS policy
 ```
 **Soluzione**: Configurazione Airtable non presente - il sito funziona comunque ma senza sincronizzazione.
 
+### Forzare il fallback locale
+Per testare senza Airtable o in caso di problemi temporanei, puoi forzare il fallback locale impostando:
+
+```
+VITE_AIRTABLE_FORCE_DISABLED=true
+```
+Questo disabilita Airtable lato client e usa solo localStorage. Inoltre, se durante l'uso l'API risponde 401/403, l'app disabilita automaticamente Airtable per la sessione corrente e passa al fallback (riabilitato al refresh della pagina).
+
 ## 🎓 Come Usare una Volta Configurato
 
 ### Per l'Insegnante:
