@@ -4,6 +4,7 @@ import path from "node:path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
 export default defineConfig({
+  base: process.env.NODE_ENV === 'production' ? '/ciclo-del-carbonio/' : '/',
   plugins: [
     react(),
     runtimeErrorOverlay(),
