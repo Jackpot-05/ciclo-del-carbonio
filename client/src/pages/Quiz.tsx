@@ -72,23 +72,32 @@ export default function Quiz() {
   const [score, setScore] = useState(0);
   const [answers, setAnswers] = useState<boolean[]>([]);
   const [isComplete, setIsComplete] = useState(false);
+  const [showingFeedback, setShowingFeedback] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const handleAnswer = (isCorrect: boolean) => {
     const newAnswers = [...answers, isCorrect];
     setAnswers(newAnswers);
+    setShowingFeedback(true);
     
     if (isCorrect) {
       setScore(score + 1);
     }
+  };
 
+  const nextQuestion = () => {
     if (currentQuestion < quizQuestions.length - 1) {
+      setIsTransitioning(true);
       setTimeout(() => {
         setCurrentQuestion(currentQuestion + 1);
-      }, 2500);
+        setShowingFeedback(false);
+        setIsTransitioning(false);
+      }, 300);
     } else {
+      setIsTransitioning(true);
       setTimeout(() => {
         setIsComplete(true);
-      }, 2500);
+      }, 500);
     }
   };
 
@@ -97,6 +106,8 @@ export default function Quiz() {
     setScore(0);
     setAnswers([]);
     setIsComplete(false);
+    setShowingFeedback(false);
+    setIsTransitioning(false);
   };
 
   const getScoreMessage = () => {
@@ -127,34 +138,62 @@ export default function Quiz() {
 
   if (isComplete) {
     const scoreMessage = getScoreMessage();
+    const percentage = Math.round((score / quizQuestions.length) * 100);
     
     return (
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <Card className="p-8 text-center space-y-6">
+        <Card className="p-8 text-center space-y-6 animate-in fade-in duration-500">
           <div className="space-y-4">
-            <Trophy className="h-16 w-16 text-primary mx-auto" />
-            <h1 className="text-3xl font-heading font-bold text-foreground">
+            <div className="animate-in zoom-in duration-700 delay-200">
+              <Trophy className="h-16 w-16 text-primary mx-auto" />
+            </div>
+            <h1 className="text-3xl font-heading font-bold text-foreground animate-in slide-in-from-bottom duration-500 delay-300">
               Quiz Completato!
             </h1>
           </div>
           
-          <div className="space-y-4">
-            <div className="text-4xl font-bold text-primary">
-              {score}/{quizQuestions.length}
+          <div className="space-y-4 animate-in slide-in-from-bottom duration-500 delay-500">
+            <div className="relative">
+              <div className="text-6xl font-bold text-primary mb-2">
+                {score}/{quizQuestions.length}
+              </div>
+              <div className="text-2xl font-semibold text-muted-foreground">
+                {percentage}%
+              </div>
             </div>
+            
+            <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
+              <div 
+                className="bg-gradient-to-r from-primary to-primary/80 h-3 rounded-full transition-all duration-1000 delay-700"
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            
             <h2 className="text-xl font-heading font-semibold text-foreground">
               {scoreMessage.title}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground max-w-md mx-auto">
               {scoreMessage.message}
             </p>
           </div>
           
-          <div className="space-y-3">
-            <div className="text-sm text-muted-foreground">
-              Percentuale: {Math.round((score / quizQuestions.length) * 100)}%
+          {/* Statistiche dettagliate */}
+          <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg animate-in slide-in-from-bottom duration-500 delay-700">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{score}</div>
+              <div className="text-xs text-muted-foreground">Corrette</div>
             </div>
-            
+            <div className="text-center">
+              <div className="text-2xl font-bold text-red-500">{quizQuestions.length - score}</div>
+              <div className="text-xs text-muted-foreground">Sbagliate</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-primary">{quizQuestions.length}</div>
+              <div className="text-xs text-muted-foreground">Totali</div>
+            </div>
+          </div>
+          
+          <div className="space-y-3 animate-in slide-in-from-bottom duration-500 delay-900">
             <Button
               onClick={resetQuiz}
               className="w-full"
@@ -171,26 +210,65 @@ export default function Quiz() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-      <header className="text-center space-y-4">
+      <header className="text-center space-y-4 animate-in fade-in duration-500">
         <h1 className="text-3xl md:text-4xl font-heading font-bold text-foreground">
           Quiz sul Ciclo del Carbonio
         </h1>
         <p className="text-muted-foreground">
           Metti alla prova le tue conoscenze con queste domande interattive
         </p>
+        
+        {/* Progress indicator migliorato */}
+        <div className="max-w-md mx-auto space-y-2">
+          <div className="flex justify-between text-sm text-muted-foreground">
+            <span>Progresso</span>
+            <span>{currentQuestion + 1}/{quizQuestions.length}</span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+            <div
+              className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${((currentQuestion + 1) / quizQuestions.length) * 100}%` }}
+            />
+          </div>
+        </div>
       </header>
 
-      <QuizQuestion
-        question={quizQuestions[currentQuestion].question}
-        options={quizQuestions[currentQuestion].options}
-        correctAnswer={quizQuestions[currentQuestion].correctAnswer}
-        onAnswer={handleAnswer}
-        questionNumber={currentQuestion + 1}
-        totalQuestions={quizQuestions.length}
-      />
+      <div className={`transition-all duration-300 ${isTransitioning ? 'opacity-0 scale-95' : 'opacity-100 scale-100'}`}>
+        <QuizQuestion
+          question={quizQuestions[currentQuestion].question}
+          options={quizQuestions[currentQuestion].options}
+          correctAnswer={quizQuestions[currentQuestion].correctAnswer}
+          onAnswer={handleAnswer}
+          questionNumber={currentQuestion + 1}
+          totalQuestions={quizQuestions.length}
+          showingFeedback={showingFeedback}
+        />
+      </div>
 
-      <div className="text-center text-sm text-muted-foreground">
-        Punteggio attuale: {score}/{currentQuestion + (answers.length > currentQuestion ? 1 : 0)}
+      {/* Controlli di navigazione */}
+      {showingFeedback && (
+        <div className="text-center animate-in slide-in-from-bottom duration-300">
+          <Button 
+            onClick={nextQuestion}
+            size="lg"
+            className="min-w-32"
+          >
+            {currentQuestion < quizQuestions.length - 1 ? 'Prossima Domanda' : 'Vedi Risultati'}
+          </Button>
+        </div>
+      )}
+
+      {/* Score tracker migliorato */}
+      <div className="text-center">
+        <div className="inline-flex items-center space-x-4 bg-muted/50 rounded-full px-4 py-2 text-sm">
+          <span className="text-muted-foreground">Punteggio:</span>
+          <span className="font-bold text-primary">{score}/{answers.length}</span>
+          {answers.length > 0 && (
+            <span className="text-xs text-muted-foreground">
+              ({Math.round((score / answers.length) * 100)}%)
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );
