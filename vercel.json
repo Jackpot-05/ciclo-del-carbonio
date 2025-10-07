@@ -1,17 +1,8 @@
 {
-  "functions": {
-    "client/src/**/*.{js,ts,jsx,tsx}": {
-      "runtime": "nodejs18.x"
-    }
-  },
-  "buildCommand": "echo 'Skipping build - using pre-built files'",
-  "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/airtable/(.*)", "destination": "/api/airtable/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

@@ -5,6 +5,7 @@ export class AirtableQuizStorage {
   private baseId = 'your_base_id'; // Da configurare
   private apiKey = 'your_api_key'; // Da configurare  
   private baseUrl = `https://api.airtable.com/v0/${this.baseId}`;
+  private proxyUrl: string | null = null;
   private enabled = false;
   private tableSessions = 'Sessions';
   private tableStudents = 'Students';
@@ -27,6 +28,7 @@ export class AirtableQuizStorage {
       // Flag per forzare il disable da env
       const f = (viteEnv.VITE_AIRTABLE_FORCE_DISABLED || '').toString().toLowerCase();
       this.forceDisabled = f === '1' || f === 'true';
+      this.proxyUrl = (viteEnv as any).VITE_AIRTABLE_PROXY_URL || null;
     }
 
     // Fallback: leggi da localStorage (SOLO sviluppo/override manuale)
@@ -56,6 +58,7 @@ export class AirtableQuizStorage {
       console.info(`Airtable enabled: ${this.enabled} (baseId: ${this.enabled ? this.baseId : 'not-set'})`);
       if (this.enabled) {
         console.info(`Airtable tables → Sessions: ${this.tableSessions}, Students: ${this.tableStudents}, Answers: ${this.tableAnswers}`);
+        if (this.proxyUrl) console.info(`Airtable proxy: ${this.proxyUrl}`);
       }
     } catch {}
   }
@@ -94,10 +97,12 @@ export class AirtableQuizStorage {
   }
 
   private getHeaders() {
-    return {
-      'Authorization': `Bearer ${this.apiKey}`,
-      'Content-Type': 'application/json'
-    };
+    // When proxy is used, the proxy injects Authorization, client shouldn't send PAT
+    const headers: any = { 'Content-Type': 'application/json' };
+    if (!this.proxyUrl) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+    return headers;
   }
 
   // Genera codice sessione unico
@@ -125,7 +130,8 @@ export class AirtableQuizStorage {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/${this.tableSessions}`, {
+      const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`);
+      const response = await fetch(url, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -204,7 +210,8 @@ export class AirtableQuizStorage {
         throw new Error('Session not found');
       }
 
-      const response = await fetch(`${this.baseUrl}/${this.tableStudents}`, {
+      const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`);
+      const response = await fetch(url, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -300,7 +307,8 @@ export class AirtableQuizStorage {
     }
 
     try {
-      const response = await fetch(`${this.baseUrl}/${this.tableAnswers}`, {
+      const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`);
+      const response = await fetch(url, {
         method: 'POST',
         headers: this.getHeaders(),
         body: JSON.stringify({
@@ -387,7 +395,7 @@ export class AirtableQuizStorage {
       {
         const formula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
         var answersResponse = await fetch(
-          `${this.baseUrl}/${this.tableAnswers}?filterByFormula=${formula}`,
+          (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`) + `?filterByFormula=${formula}`,
         { headers: this.getHeaders() }
         );
       }
@@ -400,7 +408,7 @@ export class AirtableQuizStorage {
         // Trova il record dello studente
         const studentFormula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
         const studentResponse = await fetch(
-          `${this.baseUrl}/${this.tableStudents}?filterByFormula=${studentFormula}`,
+          (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`) + `?filterByFormula=${studentFormula}`,
           { headers: this.getHeaders() }
         );
 
@@ -410,7 +418,7 @@ export class AirtableQuizStorage {
             const studentRecord = studentData.records[0];
             
             // Aggiorna punteggio
-            await fetch(`${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`, {
+            await fetch((this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}/${studentRecord.id}` : `${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`), {
               method: 'PATCH',
               headers: this.getHeaders(),
               body: JSON.stringify({
@@ -462,7 +470,7 @@ export class AirtableQuizStorage {
       // Ottieni studenti della sessione
       const studentsFormula = this.encFormula(`{Session Code}='${this.esc(sessionCode)}'`);
       const studentsResponse = await fetch(
-        `${this.baseUrl}/${this.tableStudents}?filterByFormula=${studentsFormula}`,
+        (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`) + `?filterByFormula=${studentsFormula}`,
         { headers: this.getHeaders() }
       );
 
@@ -476,7 +484,7 @@ export class AirtableQuizStorage {
       // Ottieni risposte per calcolare statistiche
       const answersFormula = this.encFormula(`{Session Code}='${this.esc(sessionCode)}'`);
       const answersResponse = await fetch(
-        `${this.baseUrl}/${this.tableAnswers}?filterByFormula=${answersFormula}`,
+        (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`) + `?filterByFormula=${answersFormula}`,
         { headers: this.getHeaders() }
       );
 
@@ -574,7 +582,7 @@ export class AirtableQuizStorage {
     try {
       const formula = this.encFormula(`AND({Session Code}='${this.esc(sessionCode)}',{Active}=TRUE())`);
       const response = await fetch(
-        `${this.baseUrl}/${this.tableSessions}?filterByFormula=${formula}`,
+        (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`) + `?filterByFormula=${formula}`,
         { headers: this.getHeaders() }
       );
 
@@ -609,7 +617,7 @@ export class AirtableQuizStorage {
       // Trova e aggiorna record studente
       const formula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
       const studentResponse = await fetch(
-        `${this.baseUrl}/${this.tableStudents}?filterByFormula=${formula}`,
+        (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`) + `?filterByFormula=${formula}`,
         { headers: this.getHeaders() }
       );
 
