@@ -15,6 +15,7 @@ interface AutoSyncStudent {
 
 class AutoSyncStorage {
   private firebaseUrl = 'https://quiz-carbonio-default-rtdb.europe-west1.firebasedatabase.app';
+  private fallbackUrl = 'https://api.jsonbin.io/v3/b/67040c8fe41b4d34e4444d6b'; // Backup storage
   private defaultClassCode = 'CLASSE2024'; // Codice classe di default
   
   // Genera codice classe automatico basato su data

@@ -4,9 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Users, Clock, HelpCircle } from "lucide-react";
-import { cloudStorage } from "@/lib/cloudStorage";
-import { simpleCloudStorage } from "@/lib/simpleCloudStorage";
-import { autoSyncStorage } from "@/lib/autoSyncStorage";
+import { realTimeStorage } from "@/lib/realTimeStorage";
 import {
   Tooltip,
   TooltipContent,
@@ -146,8 +144,8 @@ export default function QuizCollaborativo() {
     };
     
     try {
-      // Usa sistema auto-sync per sincronizzazione automatica
-      const success = await autoSyncStorage.saveStudent({
+      // Usa sistema real-time per sincronizzazione immediata
+      const success = realTimeStorage.saveStudent({
         ...newStudent,
         lastActivity: Date.now(),
         device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
@@ -155,7 +153,7 @@ export default function QuizCollaborativo() {
       
       if (success) {
         console.log('🔥 Studente salvato automaticamente - visibile al prof!');
-        setClassCode(autoSyncStorage.getCurrentClassCode());
+        setClassCode(realTimeStorage.getSessionCode());
       }
       
       setStudent(newStudent);
@@ -208,8 +206,8 @@ export default function QuizCollaborativo() {
     setStudent(updatedStudent);
     
     try {
-      // Salva aggiornamento con auto-sync
-      await autoSyncStorage.saveStudent({
+      // Salva aggiornamento con real-time storage
+      realTimeStorage.saveStudent({
         ...updatedStudent,
         device: navigator.userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'
       });

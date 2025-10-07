@@ -3,8 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cloudStorage } from "@/lib/cloudStorage";
-import { simpleCloudStorage } from "@/lib/simpleCloudStorage";
+import { realTimeStorage } from "@/lib/realTimeStorage";
 import { 
   Users, 
   CheckCircle, 
