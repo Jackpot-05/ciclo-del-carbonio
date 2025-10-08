@@ -84,7 +84,11 @@ Il codice usa 3 tabelle: `Sessions`, `Students`, `Answers`. Puoi cambiare i nomi
    - ✅ `data.records:write`
 5. Nelle **Access**, seleziona la tua base "QuizEducativo"
 6. Clicca "Create token"
-7. **COPIA SUBITO IL TOKEN** - non potrai più vederlo!
+7. In **Allowed origins** (o "Allowed websites/origins"), aggiungi l'URL del tuo sito GitHub Pages, ad esempio:
+   - `https://<tuo-utente>.github.io`
+   - `https://<tuo-utente>.github.io/ciclo-del-carbonio`
+   Esempio concreto per questo repo: `https://jackpot-05.github.io` e `https://jackpot-05.github.io/ciclo-del-carbonio`
+8. **COPIA SUBITO IL TOKEN** - non potrai più vederlo!
 
 ### Passo 5: Configura GitHub Secrets
 
@@ -104,6 +108,15 @@ Il codice usa 3 tabelle: `Sessions`, `Students`, `Answers`. Puoi cambiare i nomi
 > Nota: per retrocompatibilità è supportata anche `VITE_AIRTABLE_TABLE_NAME` come alias per il nome della tabella "Sessions". Se presente, verrà usata solo quando `VITE_AIRTABLE_SESSIONS_TABLE` non è impostata.
 
 > Dove trovarlo: vai su [airtable.com/api](https://airtable.com/api), seleziona la tua base "QuizEducativo" e copia il codice che inizia con `app` dall'URL (es: `https://airtable.com/appXXXXXXXXXXXXXX/api/docs`).
+
+### Passo 5-bis: Uso con GitHub Pages (senza Vercel)
+
+Se pubblichi il sito solo su GitHub Pages:
+
+- Non impostare `VITE_AIRTABLE_PROXY_URL` (l'app chiamerà Airtable direttamente dal browser).
+- Assicurati che il token Airtable abbia impostati gli **Allowed origins** con il dominio GitHub Pages come al Passo 4 (sia la radice `https://<utente>.github.io` sia il sottopercorso del progetto `https://<utente>.github.io/ciclo-del-carbonio`).
+- Le variabili `VITE_...` della tabella/BASE ID devono essere configurate come GitHub Secrets (vedi Passo 5) così l'Action le inietterà in build.
+- Nota di sicurezza: su GitHub Pages il token finisce nel bundle client. Mitiga il rischio con Allowed origins stretti, ruotazione periodica del token e limiti di accesso alla sola base del progetto. Se vuoi evitare di esporre il token nel client, valuta in futuro l'uso del proxy serverless (opzionale) su un hosting come Vercel.
 
 ### Passo 6: Redeploy del Sito
 
@@ -126,7 +139,10 @@ Il codice usa 3 tabelle: `Sessions`, `Students`, `Answers`. Puoi cambiare i nomi
 ```
 Access to fetch at 'https://api.airtable.com' blocked by CORS policy
 ```
-**Soluzione**: Le environment variables non sono configurate correttamente. Verifica i GitHub Secrets.
+**Soluzione**: di solito succede quando il token Airtable non include il tuo dominio in **Allowed origins** oppure quando stai testando da un origin diverso (es. `localhost` senza averlo aggiunto). Aggiungi:
+- `https://<tuo-utente>.github.io`
+- `https://<tuo-utente>.github.io/ciclo-del-carbonio`
+In alternativa, verifica anche che le environment variables siano corrette nei GitHub Secrets.
 
 ### Errore 401 Unauthorized
 ```

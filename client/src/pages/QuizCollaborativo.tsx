@@ -133,6 +133,12 @@ export default function QuizCollaborativo() {
   }, []);
 
   const handleRegistration = async () => {
+    console.log('👉 Click registrazione', {
+      name,
+      sessionCodeInput,
+      isSubmitting,
+      airtableEnabled: airtableStorage.isEnabled(),
+    });
     if (!name.trim() || !sessionCodeInput.trim()) {
       alert('Inserisci nome e codice sessione');
       return;
@@ -324,20 +330,27 @@ export default function QuizCollaborativo() {
                 onChange={(e) => setSessionCodeInput(e.target.value.toUpperCase())}
                 placeholder="Es: ABC123"
                 className="mt-1"
-                onKeyPress={(e) => e.key === 'Enter' && handleRegistration()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleRegistration();
+                  }
+                }}
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Chiedi il codice al tuo professore
               </p>
             </div>
           </div>
-          
+          {(!name.trim() || !sessionCodeInput.trim()) && (
+            <p className="text-xs text-amber-600">Inserisci sia il tuo nome che il codice sessione per continuare</p>
+          )}
           <Button
             onClick={handleRegistration}
             disabled={!name.trim() || !sessionCodeInput.trim() || isSubmitting}
             className="w-full"
           >
-            {isSubmitting ? "Registrazione..." : "Partecipa al Quiz"}
+            {isSubmitting ? "Registrazione..." : "Registrati"}
           </Button>
           
           <div className="text-center">
