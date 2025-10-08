@@ -6,12 +6,7 @@ export default function Footer() {
     <footer className="bg-card border-t border-card-border mt-auto">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="text-center space-y-4">
-          <div className="flex items-center justify-center space-x-2">
-            <Book className="h-5 w-5 text-primary" />
-            <p className="text-foreground font-medium">
-              Progetto scolastico sul Ciclo del Carbonio
-            </p>
-          </div>
+         
           <div className="flex flex-col items-center space-y-1 text-sm text-muted-foreground mt-4">
             <span>Sviluppatori: <strong>Andrea Pittoni, Mattia De Luca, Tancredi Russo</strong></span>
             <span>Liceo Vittoria Colonna, Roma – Classe 5 R</span>
