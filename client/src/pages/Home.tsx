@@ -103,12 +103,7 @@ export default function Home() {
             l'apprendimento del ciclo del carbonio, uno dei processi più importanti 
             per la comprensione della chimica ambientale e dei cambiamenti climatici.
           </p>
-          <div className="flex justify-center">
-            <div className="flex items-center space-x-2 text-primary">
-              <FileText className="h-5 w-5" />
-              <span className="font-medium">Materiale per le scuole superiori</span>
-            </div>
-          </div>
+          {/* Rimosso testo "Materiale per le scuole superiori" non cliccabile */}
         </div>
       </section>
     </div>

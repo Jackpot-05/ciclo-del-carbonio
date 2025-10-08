@@ -24,10 +24,10 @@ export default function Footer() {
               </span>
             </Link>
             <span className="text-muted-foreground/50">•</span>
-            <Link href="/quiz-admin" data-testid="link-quiz-admin-footer">
+            <Link href="/quiz-admin" data-testid="link-quiz-dashboard-footer">
               <span className="flex items-center space-x-1 hover:text-primary transition-colors hover-elevate rounded px-2 py-1">
                 <ExternalLink className="h-4 w-4" />
-                <span>Dashboard Quiz (Admin)</span>
+                <span>Quiz Dashboard</span>
               </span>
             </Link>
           </div>
