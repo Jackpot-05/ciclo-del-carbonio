@@ -53,7 +53,7 @@ function App() {
     const path = location.replace(/\?.*$/, "").replace(/\/$/, "") || "/";
     const titles: Record<string, string> = {
       "/": "Home",
-      "/ciclo-carbonio": "Ciclo del Carbonio",
+      "/ciclo-carbonio": "Panoramica",
       "/elemento-chimico": "Elemento Chimico",
       "/quiz": "Quiz Interattivo",
       "/quiz-collaborativo": "Quiz di Classe",
