@@ -42,14 +42,10 @@ function AppRoutes() {
   );
 }
 
-function App() {
-  // Usa il BASE_URL generato da Vite come base del router (es. '/ciclo-del-carbonio/' su GH Pages, '/' su Vercel)
-  const base = (import.meta as any).env?.BASE_URL
-    ? ((import.meta as any).env.BASE_URL as string).replace(/\/$/, "")
-    : "/";
-  // Aggiorna il titolo della tab in base alla route corrente
+function TitleUpdater() {
   const [location] = useLocation();
   useEffect(() => {
+    // rimuove query/hash e trailing slash
     const path = location.replace(/\?.*$/, "").replace(/\/$/, "") || "/";
     const titles: Record<string, string> = {
       "/": "Home",
@@ -64,13 +60,27 @@ function App() {
       "/lettere-scienza": "Lettere e Scienza",
       "/bibliografia": "Bibliografia",
     };
-    const pageTitle = titles[path] || path.split("/").filter(Boolean).map(s => s.replace(/-/g, " ")).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" / ") || "Pagina";
+    const pageTitle = titles[path]
+      || path.split("/").filter(Boolean)
+          .map(s => s.replace(/-/g, " "))
+          .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(" / ")
+      || "Pagina";
     document.title = `Il Ciclo del Carbonio - ${pageTitle}`;
   }, [location]);
+  return null;
+}
+
+function App() {
+  // Usa il BASE_URL generato da Vite come base del router (es. '/ciclo-del-carbonio/' su GH Pages, '/' su Vercel)
+  const base = (import.meta as any).env?.BASE_URL
+    ? ((import.meta as any).env.BASE_URL as string).replace(/\/$/, "")
+    : "/";
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <WouterRouter base={base}>
+          <TitleUpdater />
           <div className="min-h-screen flex flex-col bg-background">
             <Navigation />
             <main className="flex-1">
