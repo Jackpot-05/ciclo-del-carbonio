@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,11 @@ interface QuizQuestion {
   correctAnswer: number;
   explanation?: string;
   tooltip?: string;
+}
+
+interface ShuffledQuizQuestion extends QuizQuestion {
+  displayOptions: string[];
+  correctIndex: number; // indice della risposta corretta dopo lo shuffle
 }
 
 interface StudentAnswer {
@@ -119,7 +124,23 @@ export default function QuizCollaborativo() {
   const [connectedStudents, setConnectedStudents] = useState<number>(0);
   const [classCode, setClassCode] = useState<string>("");
 
-  const currentQuestion = collaborativeQuestions[currentQuestionIndex];
+  // Shuffler deterministico per sessione (qui semplice Fisher-Yates ad ogni mount)
+  const shuffledQuestions: ShuffledQuizQuestion[] = useMemo(() => {
+    const rng = Math.random; // semplice; se serve stabilità, introdurre un seed dal classCode
+    return collaborativeQuestions.map((q) => {
+      const indices = q.options.map((_, i) => i);
+      // Fisher-Yates
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      const displayOptions = indices.map((i) => q.options[i]);
+      const correctIndex = indices.indexOf(q.correctAnswer);
+      return { ...q, displayOptions, correctIndex };
+    });
+  }, []);
+
+  const currentQuestion = shuffledQuestions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === collaborativeQuestions.length - 1;
 
   // Aggiorna numero studenti online reale dopo registrazione
@@ -245,7 +266,7 @@ export default function QuizCollaborativo() {
     setHasAnswered(true);
     setIsSubmitting(true);
     
-    const isCorrect = answerIndex === currentQuestion.correctAnswer;
+  const isCorrect = answerIndex === currentQuestion.correctIndex;
     const answer: StudentAnswer = {
       questionId: currentQuestion.id,
       selectedAnswer: answerIndex,
@@ -492,16 +513,16 @@ export default function QuizCollaborativo() {
           </div>
 
           <div className="space-y-3">
-            {currentQuestion.options.map((option, index) => {
+            {currentQuestion.displayOptions.map((option, index) => {
               let buttonVariant: "outline" | "default" | "destructive" | "secondary" = "outline";
               let icon = null;
               let extraClasses = "";
 
               if (hasAnswered && selectedAnswer !== null) {
-                if (index === currentQuestion.correctAnswer) {
+                if (index === currentQuestion.correctIndex) {
                   buttonVariant = "default";
                   icon = <CheckCircle className="h-4 w-4" />;
-                } else if (index === selectedAnswer && index !== currentQuestion.correctAnswer) {
+                } else if (index === selectedAnswer && index !== currentQuestion.correctIndex) {
                   buttonVariant = "destructive";
                   icon = <XCircle className="h-4 w-4" />;
                 } else {
@@ -523,7 +544,7 @@ export default function QuizCollaborativo() {
                     <span className="flex-shrink-0 w-6 h-6 rounded-full border border-current flex items-center justify-center text-sm font-medium">
                       {String.fromCharCode(65 + index)}
                     </span>
-                    <span className="flex-1 text-sm">{option}</span>
+                    <span className="flex-1 text-sm text-left whitespace-normal break-words leading-snug">{option}</span>
                     {icon && (
                       <span className="flex-shrink-0">
                         {icon}
