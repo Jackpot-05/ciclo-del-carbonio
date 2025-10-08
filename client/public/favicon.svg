@@ -1,10 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Atom Icon">
   <defs>
     <style>
-      .bg { fill: #16a34a; }
-      .fg { fill: #ffffff; font: 700 72px/1 sans-serif; }
+      .bg { fill: #0ea5e9; }
+      .stroke { stroke: #ffffff; stroke-width: 6; fill: none; stroke-linecap: round; }
+      .electron { fill: #ffffff; }
     </style>
   </defs>
+  <!-- Background circle -->
   <circle class="bg" cx="64" cy="64" r="60" />
-  <text class="fg" x="50%" y="50%" dominant-baseline="middle" text-anchor="middle">C</text>
+  <!-- Atomic orbits -->
+  <ellipse class="stroke" cx="64" cy="64" rx="36" ry="16" />
+  <ellipse class="stroke" cx="64" cy="64" rx="16" ry="36" />
+  <ellipse class="stroke" cx="64" cy="64" rx="30" ry="30" transform="rotate(45 64 64)" />
+  <!-- Nucleus -->
+  <circle class="electron" cx="64" cy="64" r="6" />
+  <!-- Electrons (small dots on orbits) -->
+  <circle class="electron" cx="100" cy="64" r="4" />
+  <circle class="electron" cx="64" cy="100" r="4" />
+  <circle class="electron" cx="35" cy="35" r="4" />
 </svg>
