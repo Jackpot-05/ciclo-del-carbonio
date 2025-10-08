@@ -117,6 +117,66 @@ export class AirtableQuizStorage {
     } catch {}
   }
 
+  private async logErrorResponse(response: Response, url: string) {
+    try {
+      const ct = response.headers.get('content-type') || '';
+      const raw = await response.text();
+      let body: any = raw;
+      if (ct.includes('application/json')) {
+        try { body = JSON.parse(raw); } catch {}
+      }
+      console.warn(`[Airtable] ERROR ${response.status} for ${url}`, body);
+    } catch (e) {
+      // no-op
+    }
+  }
+
+  // Effettua una POST su Airtable e, in caso di errore per "Unknown field name",
+  // rimuove i campi sconosciuti e ritenta una sola volta per aumentare la tolleranza allo schema.
+  private async postWithPrune(url: string, fields: Record<string, any>): Promise<Response> {
+    const doPost = async (payload: any) => fetch(url, {
+      method: 'POST',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ fields: payload })
+    });
+
+    // Primo tentativo
+    let resp = await doPost(fields);
+    if (resp.ok) return resp;
+
+    // Analizza l'errore
+    try {
+      const ct = resp.headers.get('content-type') || '';
+      const raw = await resp.text();
+      let body: any = raw;
+      if (ct.includes('application/json')) {
+        try { body = JSON.parse(raw); } catch {}
+      }
+      // Logga errore dettagliato
+      console.warn(`[Airtable] ERROR ${resp.status} for ${url}`, body);
+
+      const msg: string = (body && body.error && body.error.message) ? String(body.error.message) : String(body);
+      const unknownMatch = /Unknown field name(?:s)?:\s*([^\n]+)/i.exec(msg);
+      if (unknownMatch && unknownMatch[1]) {
+        const unknownList = unknownMatch[1]
+          .split(',')
+          .map(s => s.trim().replace(/^"|"$/g, ''))
+          .filter(Boolean);
+        if (unknownList.length > 0) {
+          const pruned = { ...fields } as Record<string, any>;
+          unknownList.forEach(k => { delete pruned[k]; });
+          console.info('[Airtable] Ritento POST senza campi sconosciuti:', unknownList);
+          const retry = await doPost(pruned);
+          return retry;
+        }
+      }
+    } catch {
+      // ignora parsing error
+    }
+
+    return resp;
+  }
+
   // Genera codice sessione unico
   generateSessionCode(): string {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -144,22 +204,17 @@ export class AirtableQuizStorage {
     try {
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`);
       this.logRequest('POST', url);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          fields: {
-            'Session Code': sessionCode,
-            'Professor Name': professorName,
-            'Created At': new Date().toISOString(),
-            'Active': true,
-            'Student Count': 0
-          }
-        })
+      const response = await this.postWithPrune(url, {
+        'Session Code': sessionCode,
+        'Professor Name': professorName,
+        'Created At': new Date().toISOString(),
+        'Active': true,
+        'Student Count': 0
       });
 
       if (!response.ok) {
         this.logResponse(url, response.status);
+        await this.logErrorResponse(response, url);
         this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -227,25 +282,20 @@ export class AirtableQuizStorage {
 
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`);
       this.logRequest('POST', url);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          fields: {
-            'Student ID': studentId,
-            'Session Code': sessionCode,
-            'Name': studentName,
-            'Surname': studentSurname,
-            'Joined At': new Date().toISOString(),
-            'Score': 0,
-            'Completed': false,
-            'Last Active': new Date().toISOString()
-          }
-        })
+      const response = await this.postWithPrune(url, {
+        'Student ID': studentId,
+        'Session Code': sessionCode,
+        'Name': studentName,
+        'Surname': studentSurname,
+        'Joined At': new Date().toISOString(),
+        'Score': 0,
+        'Completed': false,
+        'Last Active': new Date().toISOString()
       });
 
       if (!response.ok) {
         this.logResponse(url, response.status);
+        await this.logErrorResponse(response, url);
         this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -327,23 +377,18 @@ export class AirtableQuizStorage {
     try {
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`);
       this.logRequest('POST', url);
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: this.getHeaders(),
-        body: JSON.stringify({
-          fields: {
-            'Student ID': studentId,
-            'Session Code': sessionCode,
-            'Question Index': questionIndex,
-            'Answer': answer,
-            'Is Correct': isCorrect,
-            'Timestamp': new Date().toISOString()
-          }
-        })
+      const response = await this.postWithPrune(url, {
+        'Student ID': studentId,
+        'Session Code': sessionCode,
+        'Question Index': questionIndex,
+        'Answer': answer,
+        'Is Correct': isCorrect,
+        'Timestamp': new Date().toISOString()
       });
 
       if (!response.ok) {
         this.logResponse(url, response.status);
+        await this.logErrorResponse(response, url);
         this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -441,7 +486,7 @@ export class AirtableQuizStorage {
             // Aggiorna punteggio
             const pUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}/${studentRecord.id}` : `${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`);
             this.logRequest('PATCH', pUrl);
-            await fetch(pUrl, {
+            const patchResp = await fetch(pUrl, {
               method: 'PATCH',
               headers: this.getHeaders(),
               body: JSON.stringify({
@@ -452,6 +497,11 @@ export class AirtableQuizStorage {
                 }
               })
             });
+            if (!patchResp.ok) {
+              this.logResponse(pUrl, patchResp.status);
+              await this.logErrorResponse(pUrl as any, pUrl);
+              this.handleAuthError(patchResp.status);
+            }
           }
         }
       } else {
@@ -649,7 +699,9 @@ export class AirtableQuizStorage {
         if (studentData.records.length > 0) {
           const studentRecord = studentData.records[0];
           
-          await fetch(`${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`, {
+          const pUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}/${studentRecord.id}` : `${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`);
+          this.logRequest('PATCH', pUrl);
+          const patchResp = await fetch(pUrl, {
             method: 'PATCH',
             headers: this.getHeaders(),
             body: JSON.stringify({
@@ -658,6 +710,11 @@ export class AirtableQuizStorage {
               }
             })
           });
+          this.logResponse(pUrl, patchResp.status);
+          if (!patchResp.ok) {
+            await this.logErrorResponse(patchResp as any, pUrl);
+            this.handleAuthError(patchResp.status);
+          }
         }
       } else {
         this.handleAuthError(studentResponse.status);
