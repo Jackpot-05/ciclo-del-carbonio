@@ -166,7 +166,7 @@ export default function QuizCollaborativo() {
     
     setIsSubmitting(true);
 
-    try {
+  try {
       // Controlla se la sessione esiste
       let sessionExists = await airtableStorage.sessionExists(sessionCodeInput);
       // Se Airtable è off, crea al volo una sessione locale per permettere la classe
@@ -202,13 +202,8 @@ export default function QuizCollaborativo() {
       
       console.log('🔥 Studente registrato! Visibile al professore in tempo reale');
       
-      // Avvia heartbeat per rimanere online
-      const heartbeatInterval = setInterval(() => {
-        airtableStorage.updateHeartbeat(sessionCodeInput, result.studentId);
-      }, 10000); // Ogni 10 secondi
-      
-      // Pulisci heartbeat quando il componente si smonta
-      return () => clearInterval(heartbeatInterval);
+      // Segna registrazione completata
+      setIsRegistered(true);
       
     } catch (error) {
       console.error('❌ Errore registrazione:', error);
@@ -230,9 +225,18 @@ export default function QuizCollaborativo() {
       console.log('📱 Studente salvato solo in localStorage');
     }
     
-    setIsRegistered(true);
     setIsSubmitting(false);
   };
+
+  // Heartbeat periodico dopo registrazione (con cleanup)
+  useEffect(() => {
+    if (!isRegistered || !student || !classCode) return;
+    if (!airtableStorage.isEnabled()) return;
+    const id = window.setInterval(() => {
+      airtableStorage.updateHeartbeat(classCode, student.id);
+    }, 10000);
+    return () => window.clearInterval(id);
+  }, [isRegistered, student?.id, classCode]);
 
   const handleAnswer = async (answerIndex: number) => {
     if (hasAnswered || !student) return;
