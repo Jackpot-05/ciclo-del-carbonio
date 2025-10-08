@@ -36,6 +36,10 @@ export class AirtableQuizStorage {
       if (typeof localStorage !== 'undefined') {
         this.baseId = localStorage.getItem('airtable_base_id') || this.baseId;
         this.apiKey = localStorage.getItem('airtable_api_key') || this.apiKey;
+        // Consenti override nomi tabelle senza rebuild
+        this.tableSessions = localStorage.getItem('airtable_table_sessions') || this.tableSessions;
+        this.tableStudents = localStorage.getItem('airtable_table_students') || this.tableStudents;
+        this.tableAnswers = localStorage.getItem('airtable_table_answers') || this.tableAnswers;
       }
     } catch (_) {}
 
