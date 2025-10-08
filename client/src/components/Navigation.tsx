@@ -14,10 +14,14 @@ const navigationItems = [
   { path: "/", label: "Home", icon: BookOpen },
   { path: "/ciclo-carbonio", label: "Ciclo del Carbonio" },
   { path: "/elemento-chimico", label: "Elemento Chimico" },
-  { path: "/quiz", label: "Quiz" },
-  { path: "/quiz-collaborativo", label: "Quiz Live" },
+  // Voci Quiz spostate in dropdown dedicato
   { path: "/infografiche", label: "Infografiche" },
   { path: "/lettere-scienza", label: "Lettere e Scienza" },
+];
+
+const quizItems = [
+  { path: "/quiz", label: "Quiz Singolo" },
+  { path: "/quiz-collaborativo", label: "Quiz di Classe" },
 ];
 
 const sustainabilityItems = [
@@ -31,6 +35,7 @@ export default function Navigation() {
   
   // Check if current location is in sustainability section
   const isSustainabilityActive = sustainabilityItems.some(item => item.path === location);
+  const isQuizActive = quizItems.some(item => item.path === location);
   const isAirtableEnabled = typeof (airtableStorage as any)?.isEnabled === 'function' ? (airtableStorage as any).isEnabled() : false;
 
   return (
@@ -49,6 +54,7 @@ export default function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden lg:flex items-center space-x-1">
+            {/* Voci base */}
             {navigationItems.map((item) => (
               <Link key={item.path} href={item.path} data-testid={`link-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
                 <Button
@@ -60,7 +66,30 @@ export default function Navigation() {
                 </Button>
               </Link>
             ))}
-            
+
+            {/* Quiz Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={isQuizActive ? "default" : "ghost"}
+                  size="sm"
+                  className="text-sm font-medium"
+                >
+                  Quiz
+                  <ChevronDown className="ml-1 h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {quizItems.map((item) => (
+                  <DropdownMenuItem key={item.path} asChild>
+                    <Link href={item.path} className="flex items-center w-full">
+                      <span>{item.label}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Sustainability Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -111,6 +140,7 @@ export default function Navigation() {
         {isMenuOpen && (
           <div className="lg:hidden border-t border-border bg-card">
             <div className="py-2 space-y-1">
+              {/* Voci base (senza quiz) */}
               {navigationItems.map((item) => (
                 <Link
                   key={item.path}
@@ -126,6 +156,25 @@ export default function Navigation() {
                   </Button>
                 </Link>
               ))}
+
+              {/* Mobile Quiz Section */}
+              <div className="px-3 py-2">
+                <p className="text-xs font-medium text-muted-foreground mb-2">Quiz</p>
+                {quizItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Button
+                      variant={location === item.path ? "default" : "ghost"}
+                      className="w-full justify-start text-sm mb-1"
+                    >
+                      {item.label}
+                    </Button>
+                  </Link>
+                ))}
+              </div>
               
               {/* Mobile Sustainability Section */}
               <div className="px-3 py-2">
