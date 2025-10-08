@@ -213,6 +213,7 @@ export class AirtableQuizStorage {
 
       const msg: string = (body && body.error && body.error.message) ? String(body.error.message) : String(body);
       const unknownMatch = /Unknown field name(?:s)?:\s*([^\n]+)/i.exec(msg);
+      const badValueMatch = /Field\s+"([^"]+)"\s+cannot accept the provided value/i.exec(msg);
       if (unknownMatch && unknownMatch[1]) {
         const unknownList = unknownMatch[1]
           .split(',')
@@ -225,6 +226,13 @@ export class AirtableQuizStorage {
           const retry = await doPost(pruned);
           return retry;
         }
+      } else if (badValueMatch && badValueMatch[1]) {
+        const field = badValueMatch[1];
+        const pruned = { ...fields } as Record<string, any>;
+        delete pruned[field];
+        console.info('[Airtable] Ritento POST senza campo con valore non accettato:', field);
+        const retry = await doPost(pruned);
+        return retry;
       }
     } catch {
       // ignora parsing error
@@ -432,13 +440,13 @@ export class AirtableQuizStorage {
     try {
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`);
       this.logRequest('POST', url);
+      // Payload minimo: niente Timestamp (può essere campo di sistema non scrivibile o di tipo diverso)
       const response = await this.postWithPrune(url, {
         'Student ID': studentId,
         'Session Code': sessionCode,
         'Question Index': questionIndex,
         'Answer': answer,
-        'Is Correct': isCorrect,
-        'Timestamp': new Date().toISOString()
+        'Is Correct': isCorrect
       });
 
       if (!response.ok) {
@@ -620,14 +628,19 @@ export class AirtableQuizStorage {
       // Trasforma dati per compatibilità
       const students = studentsData.records.map((record: any) => {
         const fields = record.fields;
-        const answersOfStudent = answersData.records
+        const answersOfStudent = (answersData.records as any[])
           .filter((answer: any) => answer.fields['Student ID'] === fields['Student ID']);
-        const studentAnswers = answersOfStudent.map((answer: any) => ({
-          questionId: `q${answer.fields['Question Index'] + 1}`,
-          selectedAnswer: answer.fields['Answer'],
-          isCorrect: answer.fields['Is Correct'],
-          timestamp: new Date(answer.fields['Timestamp']).getTime()
-        }));
+        const studentAnswers = answersOfStudent.map((answer: any) => {
+          const ts = answer.fields['Timestamp']
+            ? new Date(answer.fields['Timestamp']).getTime()
+            : (answer.createdTime ? new Date(answer.createdTime).getTime() : Date.now());
+          return {
+            questionId: `q${answer.fields['Question Index'] + 1}`,
+            selectedAnswer: answer.fields['Answer'],
+            isCorrect: answer.fields['Is Correct'],
+            timestamp: ts
+          };
+        });
 
         // Calcola lastActivity robusto: preferisci 'Last Active', altrimenti massimo Timestamp delle risposte
         const lastActiveField = fields['Last Active'] ? new Date(fields['Last Active']).getTime() : NaN;
