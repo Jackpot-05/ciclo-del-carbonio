@@ -105,6 +105,18 @@ export class AirtableQuizStorage {
     return headers;
   }
 
+  private logRequest(method: string, url: string) {
+    try {
+      console.info(`[Airtable] ${method} ${url}`);
+    } catch {}
+  }
+
+  private logResponse(url: string, status: number) {
+    try {
+      console.info(`[Airtable] <= ${status} for ${url}`);
+    } catch {}
+  }
+
   // Genera codice sessione unico
   generateSessionCode(): string {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -131,6 +143,7 @@ export class AirtableQuizStorage {
 
     try {
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`);
+      this.logRequest('POST', url);
       const response = await fetch(url, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -146,10 +159,12 @@ export class AirtableQuizStorage {
       });
 
       if (!response.ok) {
+        this.logResponse(url, response.status);
         this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      this.logResponse(url, response.status);
       const data = await response.json();
       console.log('✅ Sessione creata su Airtable:', sessionCode);
       return { success: true, sessionId: data.id };
@@ -211,6 +226,7 @@ export class AirtableQuizStorage {
       }
 
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`);
+      this.logRequest('POST', url);
       const response = await fetch(url, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -229,10 +245,12 @@ export class AirtableQuizStorage {
       });
 
       if (!response.ok) {
+        this.logResponse(url, response.status);
         this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      this.logResponse(url, response.status);
       const data = await response.json();
       console.log('✅ Studente registrato su Airtable:', studentName);
       return { success: true, studentId, airtableId: data.id };
@@ -308,6 +326,7 @@ export class AirtableQuizStorage {
 
     try {
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`);
+      this.logRequest('POST', url);
       const response = await fetch(url, {
         method: 'POST',
         headers: this.getHeaders(),
@@ -324,10 +343,12 @@ export class AirtableQuizStorage {
       });
 
       if (!response.ok) {
+        this.logResponse(url, response.status);
         this.handleAuthError(response.status);
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      this.logResponse(url, response.status);
       // Aggiorna anche il punteggio dello studente
       await this.updateStudentScore(sessionCode, studentId);
       
@@ -394,10 +415,10 @@ export class AirtableQuizStorage {
       // Prima ottieni tutte le risposte dello studente
       {
         const formula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
-        var answersResponse = await fetch(
-          (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`) + `?filterByFormula=${formula}`,
-        { headers: this.getHeaders() }
-        );
+        const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`) + `?filterByFormula=${formula}`;
+        this.logRequest('GET', url);
+        var answersResponse = await fetch(url, { headers: this.getHeaders() });
+        this.logResponse(url, answersResponse.status);
       }
 
       if (answersResponse.ok) {
@@ -407,10 +428,10 @@ export class AirtableQuizStorage {
 
         // Trova il record dello studente
         const studentFormula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
-        const studentResponse = await fetch(
-          (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`) + `?filterByFormula=${studentFormula}`,
-          { headers: this.getHeaders() }
-        );
+        const sUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`) + `?filterByFormula=${studentFormula}`;
+        this.logRequest('GET', sUrl);
+        const studentResponse = await fetch(sUrl, { headers: this.getHeaders() });
+        this.logResponse(sUrl, studentResponse.status);
 
         if (studentResponse.ok) {
           const studentData = await studentResponse.json();
@@ -418,7 +439,9 @@ export class AirtableQuizStorage {
             const studentRecord = studentData.records[0];
             
             // Aggiorna punteggio
-            await fetch((this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}/${studentRecord.id}` : `${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`), {
+            const pUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}/${studentRecord.id}` : `${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`);
+            this.logRequest('PATCH', pUrl);
+            await fetch(pUrl, {
               method: 'PATCH',
               headers: this.getHeaders(),
               body: JSON.stringify({
@@ -469,10 +492,10 @@ export class AirtableQuizStorage {
     try {
       // Ottieni studenti della sessione
       const studentsFormula = this.encFormula(`{Session Code}='${this.esc(sessionCode)}'`);
-      const studentsResponse = await fetch(
-        (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`) + `?filterByFormula=${studentsFormula}`,
-        { headers: this.getHeaders() }
-      );
+      const sUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`) + `?filterByFormula=${studentsFormula}`;
+      this.logRequest('GET', sUrl);
+      const studentsResponse = await fetch(sUrl, { headers: this.getHeaders() });
+      this.logResponse(sUrl, studentsResponse.status);
 
       if (!studentsResponse.ok) {
         this.handleAuthError(studentsResponse.status);
@@ -483,10 +506,10 @@ export class AirtableQuizStorage {
       
       // Ottieni risposte per calcolare statistiche
       const answersFormula = this.encFormula(`{Session Code}='${this.esc(sessionCode)}'`);
-      const answersResponse = await fetch(
-        (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`) + `?filterByFormula=${answersFormula}`,
-        { headers: this.getHeaders() }
-      );
+      const aUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableAnswers}` : `${this.baseUrl}/${this.tableAnswers}`) + `?filterByFormula=${answersFormula}`;
+      this.logRequest('GET', aUrl);
+      const answersResponse = await fetch(aUrl, { headers: this.getHeaders() });
+      this.logResponse(aUrl, answersResponse.status);
 
       let answersData = { records: [] };
       if (answersResponse.ok) {
@@ -581,10 +604,10 @@ export class AirtableQuizStorage {
     }
     try {
       const formula = this.encFormula(`AND({Session Code}='${this.esc(sessionCode)}',{Active}=TRUE())`);
-      const response = await fetch(
-        (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`) + `?filterByFormula=${formula}`,
-        { headers: this.getHeaders() }
-      );
+      const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`) + `?filterByFormula=${formula}`;
+      this.logRequest('GET', url);
+      const response = await fetch(url, { headers: this.getHeaders() });
+      this.logResponse(url, response.status);
 
       if (response.ok) {
         const data = await response.json();
