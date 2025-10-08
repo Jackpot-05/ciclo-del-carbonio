@@ -1,4 +1,5 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -46,6 +47,26 @@ function App() {
   const base = (import.meta as any).env?.BASE_URL
     ? ((import.meta as any).env.BASE_URL as string).replace(/\/$/, "")
     : "/";
+  // Aggiorna il titolo della tab in base alla route corrente
+  const [location] = useLocation();
+  useEffect(() => {
+    const path = location.replace(/\?.*$/, "").replace(/\/$/, "") || "/";
+    const titles: Record<string, string> = {
+      "/": "Home",
+      "/ciclo-carbonio": "Ciclo del Carbonio",
+      "/elemento-chimico": "Elemento Chimico",
+      "/quiz": "Quiz Interattivo",
+      "/quiz-collaborativo": "Quiz di Classe",
+      "/quiz-admin": "Quiz Dashboard",
+      "/infografiche": "Infografiche",
+      "/educazione-civica": "Educazione Civica",
+      "/cittadino-consapevole": "Cittadino Consapevole",
+      "/lettere-scienza": "Lettere e Scienza",
+      "/bibliografia": "Bibliografia",
+    };
+    const pageTitle = titles[path] || path.split("/").filter(Boolean).map(s => s.replace(/-/g, " ")).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" / ") || "Pagina";
+    document.title = `Il Ciclo del Carbonio - ${pageTitle}`;
+  }, [location]);
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
