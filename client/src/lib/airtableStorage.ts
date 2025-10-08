@@ -208,12 +208,14 @@ export class AirtableQuizStorage {
     try {
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`);
       this.logRequest('POST', url);
+      // Payload minimale per massima compatibilità con schemi diversi
       const response = await this.postWithPrune(url, {
-        'Session Code': sessionCode,
-        'Professor Name': professorName,
-        'Created At': new Date().toISOString(),
-        'Active': true,
-        'Student Count': 0
+        'Session Code': sessionCode
+        // Campi opzionali rimossi per evitare 422 su schemi non allineati
+        // 'Active': true,
+        // 'Professor Name': professorName,
+        // 'Created At': new Date().toISOString(),
+        // 'Student Count': 0
       });
 
       if (!response.ok) {
@@ -286,15 +288,12 @@ export class AirtableQuizStorage {
 
       const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}` : `${this.baseUrl}/${this.tableStudents}`);
       this.logRequest('POST', url);
+      // Payload minimale per massima compatibilità
       const response = await this.postWithPrune(url, {
         'Student ID': studentId,
         'Session Code': sessionCode,
-        'Name': studentName,
-        'Surname': studentSurname,
-        'Joined At': new Date().toISOString(),
-        'Score': 0,
-        'Completed': false,
-        'Last Active': new Date().toISOString()
+        'Name': studentName
+        // campi opzionali rimossi: 'Surname', 'Joined At', 'Score', 'Completed', 'Last Active'
       });
 
       if (!response.ok) {
@@ -657,22 +656,38 @@ export class AirtableQuizStorage {
       return hasLocal || hasRT;
     }
     try {
-      const formula = this.encFormula(`AND({Session Code}='${this.esc(sessionCode)}',{Active}=TRUE())`);
-      const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`) + `?filterByFormula=${formula}`;
-      this.logRequest('GET', url);
-      const response = await fetch(url, { headers: this.getHeaders() });
-      this.logResponse(url, response.status);
-
-      if (response.ok) {
-        const data = await response.json();
-        return data.records.length > 0;
+      // Primo tentativo: Session Code + Active=TRUE (se il campo Active esiste ed è checkbox)
+      {
+        const formula = this.encFormula(`AND({Session Code}='${this.esc(sessionCode)}',{Active}=TRUE())`);
+        const url = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`) + `?filterByFormula=${formula}`;
+        this.logRequest('GET', url);
+        const response = await fetch(url, { headers: this.getHeaders() });
+        this.logResponse(url, response.status);
+        if (response.ok) {
+          const data = await response.json();
+          if ((data.records || []).length > 0) return true;
+        } else {
+          this.handleAuthError(response.status);
+        }
       }
-      this.handleAuthError(response.status);
-      return false;
+
+      // Secondo tentativo: solo per Session Code (compatibilità basi senza campo Active)
+      {
+        const formula2 = this.encFormula(`{Session Code}='${this.esc(sessionCode)}'`);
+        const url2 = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableSessions}` : `${this.baseUrl}/${this.tableSessions}`) + `?filterByFormula=${formula2}`;
+        this.logRequest('GET', url2);
+        const response2 = await fetch(url2, { headers: this.getHeaders() });
+        this.logResponse(url2, response2.status);
+        if (response2.ok) {
+          const data2 = await response2.json();
+          return (data2.records || []).length > 0;
+        } else {
+          this.handleAuthError(response2.status);
+          return false;
+        }
+      }
     } catch (error) {
       console.warn('⚠️ Errore verifica sessione, usando localStorage:', error);
-      
-      // Fallback localStorage
       const sessionKey = `session_${sessionCode}`;
       return localStorage.getItem(sessionKey) !== null;
     }
