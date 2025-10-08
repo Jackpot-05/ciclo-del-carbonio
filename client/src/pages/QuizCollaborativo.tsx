@@ -116,21 +116,41 @@ export default function QuizCollaborativo() {
   const [hasAnswered, setHasAnswered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [connectedStudents, setConnectedStudents] = useState<number>(1);
+  const [connectedStudents, setConnectedStudents] = useState<number>(0);
   const [classCode, setClassCode] = useState<string>("");
 
   const currentQuestion = collaborativeQuestions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === collaborativeQuestions.length - 1;
 
-  // Simula connessione backend
+  // Aggiorna numero studenti online reale dopo registrazione
   useEffect(() => {
-    // Simula altri studenti online
-    const interval = setInterval(() => {
-      setConnectedStudents(Math.floor(Math.random() * 8) + 3);
-    }, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    if (!isRegistered || !classCode) return;
+    let cleanup: (() => void) | null = null;
+    let interval: number | null = null;
+
+    if (airtableStorage.isEnabled()) {
+      const poll = async () => {
+        try {
+          const data = await airtableStorage.getSessionData(classCode);
+          const online = (data.students || []).filter((s: any) => s.isOnline).length;
+          setConnectedStudents(online);
+        } catch {}
+      };
+      poll();
+      interval = window.setInterval(poll, 5000);
+    } else {
+      // Fallback locale: ascolta aggiornamenti realtime
+      cleanup = realTimeStorage.listenToUpdates((students) => {
+        const online = (students || []).filter((s: any) => s.isOnline).length;
+        setConnectedStudents(online);
+      });
+    }
+
+    return () => {
+      if (interval) window.clearInterval(interval);
+      if (cleanup) cleanup();
+    };
+  }, [isRegistered, classCode]);
 
   const handleRegistration = async () => {
     console.log('👉 Click registrazione', {
