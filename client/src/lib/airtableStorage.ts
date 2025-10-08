@@ -135,6 +135,55 @@ export class AirtableQuizStorage {
     }
   }
 
+  // Effettua una PATCH su Airtable e, in caso di errore per campi sconosciuti o valori non accettati,
+  // rimuove i campi problematici e ritenta una sola volta.
+  private async patchWithPrune(url: string, fields: Record<string, any>): Promise<Response> {
+    const doPatch = async (payload: any) => fetch(url, {
+      method: 'PATCH',
+      headers: this.getHeaders(),
+      body: JSON.stringify({ fields: payload })
+    });
+
+    let resp = await doPatch(fields);
+    if (resp.ok) return resp;
+
+    try {
+      const ct = resp.headers.get('content-type') || '';
+      const raw = await resp.text();
+      let body: any = raw;
+      if (ct.includes('application/json')) {
+        try { body = JSON.parse(raw); } catch {}
+      }
+      console.warn(`[Airtable] ERROR ${resp.status} for ${url}`, body);
+
+      const msg: string = (body && body.error && body.error.message) ? String(body.error.message) : String(body);
+      // Unknown field name(s): ...
+      const unknownMatch = /Unknown field name(?:s)?:\s*([^\n]+)/i.exec(msg);
+      // Field "X" cannot accept the provided value
+      const badValueMatch = /Field\s+"([^"]+)"\s+cannot accept the provided value/i.exec(msg);
+
+      const toRemove: string[] = [];
+      if (unknownMatch && unknownMatch[1]) {
+        unknownMatch[1].split(',').forEach(s => toRemove.push(s.trim().replace(/^"|"$/g, '')));
+      }
+      if (badValueMatch && badValueMatch[1]) {
+        toRemove.push(badValueMatch[1]);
+      }
+
+      if (toRemove.length > 0) {
+        const pruned = { ...fields } as Record<string, any>;
+        toRemove.forEach(k => { delete pruned[k]; });
+        console.info('[Airtable] Ritento PATCH senza campi problematici:', toRemove);
+        const retry = await doPatch(pruned);
+        return retry;
+      }
+    } catch {
+      // ignora parsing error
+    }
+
+    return resp;
+  }
+
   // Effettua una POST su Airtable e, in caso di errore per "Unknown field name",
   // rimuove i campi sconosciuti e ritenta una sola volta per aumentare la tolleranza allo schema.
   private async postWithPrune(url: string, fields: Record<string, any>): Promise<Response> {
@@ -489,20 +538,14 @@ export class AirtableQuizStorage {
             // Aggiorna punteggio
             const pUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}/${studentRecord.id}` : `${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`);
             this.logRequest('PATCH', pUrl);
-            const patchResp = await fetch(pUrl, {
-              method: 'PATCH',
-              headers: this.getHeaders(),
-              body: JSON.stringify({
-                fields: {
-                  'Score': correctAnswers,
-                  'Completed': totalAnswers >= 5,
-                  'Last Active': new Date().toISOString()
-                }
-              })
+            const patchResp = await this.patchWithPrune(pUrl, {
+              'Score': correctAnswers,
+              'Completed': totalAnswers >= 5,
+              'Last Active': new Date().toISOString()
             });
             if (!patchResp.ok) {
               this.logResponse(pUrl, patchResp.status);
-              await this.logErrorResponse(pUrl as any, pUrl);
+              await this.logErrorResponse(patchResp as any, pUrl);
               this.handleAuthError(patchResp.status);
             }
           }
@@ -720,14 +763,8 @@ export class AirtableQuizStorage {
           
           const pUrl = (this.proxyUrl ? `${this.proxyUrl}/v0/${this.baseId}/${this.tableStudents}/${studentRecord.id}` : `${this.baseUrl}/${this.tableStudents}/${studentRecord.id}`);
           this.logRequest('PATCH', pUrl);
-          const patchResp = await fetch(pUrl, {
-            method: 'PATCH',
-            headers: this.getHeaders(),
-            body: JSON.stringify({
-              fields: {
-                'Last Active': new Date().toISOString()
-              }
-            })
+          const patchResp = await this.patchWithPrune(pUrl, {
+            'Last Active': new Date().toISOString()
           });
           this.logResponse(pUrl, patchResp.status);
           if (!patchResp.ok) {
