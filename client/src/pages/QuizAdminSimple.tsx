@@ -49,6 +49,8 @@ export default function QuizAdminSimple() {
   const [lastUpdate, setLastUpdate] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionCode, setSessionCode] = useState<string>('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   // Carica dati e avvia listening
   useEffect(() => {
@@ -95,6 +97,27 @@ export default function QuizAdminSimple() {
     }
   }, []);
 
+  const handleGenerateSession = async () => {
+    setCreateError(null);
+    setIsCreating(true);
+    try {
+      const code = airtableStorage.generateSessionCode();
+      // Crea record su Airtable se attivo, altrimenti prepara locale
+      await airtableStorage.createSession(code, 'Professor');
+      // Aggiorna canale real-time e UI
+      realTimeStorage.setSessionCode(code);
+      setSessionCode(code);
+      setStudents([]);
+      setLastUpdate(new Date().toLocaleTimeString());
+      console.info('🆕 Sessione generata e sincronizzata:', code);
+    } catch (e: any) {
+      console.error('Errore creazione sessione:', e);
+      setCreateError('Non è stato possibile creare la sessione. Riprova.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   // Calcola statistiche
   const stats = {
     totalStudents: students.length,
@@ -124,10 +147,18 @@ export default function QuizAdminSimple() {
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold text-emerald-800">Quiz Live Dashboard</h1>
           <p className="text-emerald-600">Monitoraggio real-time degli studenti</p>
-          <Badge variant="outline" className="text-lg px-4 py-2">
-            <Clock className="w-4 h-4 mr-2" />
-            Sessione: {sessionCode}
-          </Badge>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-3">
+            <Badge variant="outline" className="text-lg px-4 py-2">
+              <Clock className="w-4 h-4 mr-2" />
+              Sessione: {sessionCode || '—'}
+            </Badge>
+            <Button onClick={handleGenerateSession} disabled={isCreating}>
+              {isCreating ? 'Creazione…' : 'Genera Nuova Sessione'}
+            </Button>
+          </div>
+          {createError && (
+            <p className="text-red-600 text-sm">{createError}</p>
+          )}
         </div>
 
         {/* Statistiche */}
