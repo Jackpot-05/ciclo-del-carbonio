@@ -11,6 +11,9 @@ export class AirtableQuizStorage {
   private tableStudents = 'Students';
   private tableAnswers = 'Answers';
   private forceDisabled = false;
+  // Se in alcune basi il campo 'Last Active' non esiste o ha tipo diverso,
+  // evitiamo di riprovare heartbeat per non spammare 422.
+  private suppressHeartbeat = false;
 
   constructor() {
     // Leggi env Vite lato client
@@ -617,22 +620,31 @@ export class AirtableQuizStorage {
       // Trasforma dati per compatibilità
       const students = studentsData.records.map((record: any) => {
         const fields = record.fields;
-        const studentAnswers = answersData.records
-          .filter((answer: any) => answer.fields['Student ID'] === fields['Student ID'])
-          .map((answer: any) => ({
-            questionId: `q${answer.fields['Question Index'] + 1}`,
-            selectedAnswer: answer.fields['Answer'],
-            isCorrect: answer.fields['Is Correct'],
-            timestamp: new Date(answer.fields['Timestamp']).getTime()
-          }));
+        const answersOfStudent = answersData.records
+          .filter((answer: any) => answer.fields['Student ID'] === fields['Student ID']);
+        const studentAnswers = answersOfStudent.map((answer: any) => ({
+          questionId: `q${answer.fields['Question Index'] + 1}`,
+          selectedAnswer: answer.fields['Answer'],
+          isCorrect: answer.fields['Is Correct'],
+          timestamp: new Date(answer.fields['Timestamp']).getTime()
+        }));
+
+        // Calcola lastActivity robusto: preferisci 'Last Active', altrimenti massimo Timestamp delle risposte
+        const lastActiveField = fields['Last Active'] ? new Date(fields['Last Active']).getTime() : NaN;
+        const maxAnswerTs = answersOfStudent.reduce((max: number, r: any) => {
+          const t = r.fields['Timestamp'] ? new Date(r.fields['Timestamp']).getTime() : NaN;
+          return isNaN(t) ? max : Math.max(max, t);
+        }, 0);
+        const lastActivity = !isNaN(lastActiveField) ? lastActiveField : (maxAnswerTs || 0);
+        const isOnline = lastActivity > 0 ? (Date.now() - lastActivity) < 30000 : false;
 
         return {
           id: fields['Student ID'],
           name: `${fields['Name']} ${fields['Surname'] || ''}`.trim(),
           answers: studentAnswers,
           score: fields['Score'] || 0,
-          isOnline: Date.now() - new Date(fields['Last Active']).getTime() < 30000,
-          lastActivity: new Date(fields['Last Active']).getTime(),
+          isOnline,
+          lastActivity,
           device: 'Web',
           sessionCode: sessionCode
         };
@@ -749,6 +761,7 @@ export class AirtableQuizStorage {
       return;
     }
     try {
+      if (this.suppressHeartbeat) return;
       // Trova e aggiorna record studente
       const formula = this.encFormula(`AND({Student ID}='${this.esc(studentId)}',{Session Code}='${this.esc(sessionCode)}')`);
       const studentResponse = await fetch(
@@ -770,6 +783,8 @@ export class AirtableQuizStorage {
           if (!patchResp.ok) {
             await this.logErrorResponse(patchResp as any, pUrl);
             this.handleAuthError(patchResp.status);
+            // Se il problema è dovuto a Last Active non supportato, non ripetere heartbeat per questa sessione.
+            this.suppressHeartbeat = true;
           }
         }
       } else {
