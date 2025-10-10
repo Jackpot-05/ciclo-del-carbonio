@@ -107,7 +107,7 @@ export default function LettereScienza() {
               <h4 className="font-medium text-foreground mb-2">Il Percorso Geologico</h4>
               <p className="text-sm text-muted-foreground">
                 L'atomo inizia il suo viaggio intrappolato in una roccia calcarea, 
-                liberato dal weathering e dall'erosione nel corso di milioni di anni.
+                liberato nell'aria da una fornace che fonde la roccia, scavata dall'uomo.
               </p>
             </Card>
 
